@@ -25,4 +25,6 @@ namespace exl::result {
     constexpr Result HookTrampolineAllocFail        = MakeResult(ExlModule, 2);
     constexpr Result HookFixingTooManyInstructions  = MakeResult(ExlModule, 3);
     constexpr Result FailedToFindTarget             = MakeResult(ExlModule, 4);
+    constexpr Result TooManyStaticModules           = MakeResult(ExlModule, 5);
+    
 }

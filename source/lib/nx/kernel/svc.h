@@ -104,6 +104,20 @@ typedef struct {
     u64 X[8];  ///< Values of X0 through X7.
 } PACKED SecmonArgs;
 
+/// Break reasons
+typedef enum {
+    BreakReason_Panic         = 0,
+    BreakReason_Assert        = 1,
+    BreakReason_User          = 2,
+    BreakReason_PreLoadDll    = 3,
+    BreakReason_PostLoadDll   = 4,
+    BreakReason_PreUnloadDll  = 5,
+    BreakReason_PostUnloadDll = 6,
+    BreakReason_CppException  = 7,
+
+    BreakReason_NotificationOnlyFlag = 0x80000000,
+} BreakReason;
+
 /// Code memory mapping operations
 typedef enum {
     CodeMapOperation_MapOwner = 0,    ///< Map owner.

@@ -30,18 +30,19 @@
 
 #include "common.hpp"
 
+#include <cstring>
 #include <type_traits>
 
 namespace exl::util {
 
     template<typename T>
-    concept RealFunction = std::is_function_v<T> || std::is_function_v<std::remove_pointer_t<T>>;
+    concept RealFunction = std::is_function_v<T> || std::is_function_v<std::remove_pointer_t<T>> || std::is_function_v<std::remove_reference_t<T>>;
 
     class Hook {
         private:
         static Jit s_HookJit;
 
-        static bool HookFuncImpl(void* const symbol, void* const replace, void* const rxtr, void* const rwtr);
+        static uintptr_t HookFuncCommon(uintptr_t hook, uintptr_t callback, bool do_trampoline = false);
         static Result AllocForTrampoline(uint32_t** rx, uint32_t** rw);
 
         public:
@@ -59,25 +60,24 @@ namespace exl::util {
 
         static void Initialize();
 
-        template<typename Func> requires RealFunction<Func>
+        template<typename Func> requires RealFunction<Func> || std::is_member_function_pointer_v<Func>
         static Func HookFunc(Func hook, Func callback, bool do_trampoline = false) {
 
-            /* TODO: thread safety */
+            /* Workaround for being unable to cast member functions. */
+            /* Probably some horrible UB here? */
+            uintptr_t hookp;
+            uintptr_t callbackp;
+            memcpy(&hookp, &hook, sizeof(hookp));
+            memcpy(&callbackp, &callback, sizeof(callbackp));
 
-            R_ABORT_UNLESS(jitTransitionToWritable(&s_HookJit));
+            uintptr_t trampoline = HookFuncCommon(hookp, callbackp, do_trampoline);
 
-            u32* rxtrampoline = NULL;
-            u32* rwtrampoline = NULL;
-            if (do_trampoline) 
-                R_ABORT_UNLESS(AllocForTrampoline(&rxtrampoline, &rwtrampoline));
+            /* Workaround for being unable to cast member functions. */
+            /* Probably some horrible UB here? */
+            Func ret;
+            memcpy(&ret, &trampoline, sizeof(trampoline));
 
-            if (!HookFuncImpl(reinterpret_cast<void*>(hook), reinterpret_cast<void*>(callback), rxtrampoline, rwtrampoline))
-                EXL_ABORT(exl::result::HookFailed);
-
-            R_ABORT_UNLESS(jitTransitionToExecutable(&s_HookJit));
-
-
-            return (Func)rxtrampoline;
+            return ret;
         }
 
         template<typename Func> requires RealFunction<Func>
@@ -88,6 +88,15 @@ namespace exl::util {
         template<typename Func> requires RealFunction<Func>
         static Func HookFunc(uintptr_t hook, uintptr_t callback, bool do_trampoline = false) {
             return HookFunc(reinterpret_cast<Func>(hook), reinterpret_cast<Func>(callback), do_trampoline);
+        }
+
+        template<typename Func1, typename Func2> 
+        requires 
+        /* Both funcs are member pointers. */
+        std::is_member_function_pointer_v<Func1> && std::is_member_function_pointer_v<Func2>
+        /* TODO: ensure safety that Func2 can be casted to Func1 */
+        static Func1 HookFunc(Func1 hook, Func2 callback, bool do_trampoline = false) {
+            return HookFunc(reinterpret_cast<Func1>(hook), reinterpret_cast<Func1>(callback), do_trampoline);
         }
 
     };

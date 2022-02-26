@@ -54,7 +54,7 @@ namespace exl::util {
 
         // Hooking constants
         constexpr s64 MaxInstructions = 5;
-        constexpr u64 HookMax = 256 * 2;
+        constexpr u64 HookMax = 10;
         constexpr size_t TrampolineSize = MaxInstructions * 10;
         constexpr u64 MaxReferences = MaxInstructions * 2;
         constexpr u32 Aarch64Nop = 0xd503201f;
@@ -514,7 +514,7 @@ namespace exl::util {
             }  // if
 
             const uintptr_t total = (outrxp - outprx_base) * sizeof(uint32_t);
-            __flush_cache(outprx_base, total);  // necessary
+            // __flush_cache(outprx_base, total);  // necessary
             __flush_cache(outprw_base, total);
         }
     }
@@ -561,7 +561,7 @@ Result Hook::AllocForTrampoline(uint32_t** rx, uint32_t** rw) {
 
 //-------------------------------------------------------------------------
 
-bool Hook::HookFuncImpl(void* const symbol, void* const replace, void* const rxtr, void* const rwtr) {
+static bool HookFuncImpl(void* const symbol, void* const replace, void* const rxtr, void* const rwtr) {
     static constexpr uint_fast64_t mask = 0x03ffffffu;  // 0b00000011111111111111111111111111
 
     uint32_t *rxtrampoline = static_cast<uint32_t*>(rxtr), *rwtrampoline = static_cast<uint32_t*>(rwtr),
@@ -570,17 +570,17 @@ bool Hook::HookFuncImpl(void* const symbol, void* const replace, void* const rxt
     static_assert(MaxInstructions >= 5, "please fix MaxInstructions!");
     auto pc_offset = static_cast<int64_t>(__intval(replace) - __intval(symbol)) >> 2;
     if (llabs(pc_offset) >= (mask >> 1)) {
-        exl::util::RwPages control((uintptr_t)original, 5 * sizeof(uint32_t));
+        const exl::util::RwPages ctrl((uintptr_t)original, 5 * sizeof(uint32_t));
 
         int32_t count = (reinterpret_cast<uint64_t>(original + 2) & 7u) != 0u ? 5 : 4;
 
-        original = (u32*)control.m_Rw;
+        original = (u32*)ctrl.GetRw();
 
         if (rxtrampoline) {
             if (TrampolineSize < count * 10u) {
                 return false;
             }  // if
-            __fix_instructions(original, (u32*)control.m_Rx, count, rwtrampoline, rxtrampoline);
+            __fix_instructions(original, (u32*)ctrl.GetRo(), count, rwtrampoline, rxtrampoline);
         }  // if
 
         if (count == 5) {
@@ -592,15 +592,15 @@ bool Hook::HookFuncImpl(void* const symbol, void* const replace, void* const rxt
         *reinterpret_cast<int64_t*>(original + 2) = __intval(replace);
         __flush_cache(symbol, 5 * sizeof(uint32_t));
     } else {
-        exl::util::RwPages control((uintptr_t)original, 1 * sizeof(uint32_t));
+        const exl::util::RwPages ctrl((uintptr_t)original, 1 * sizeof(uint32_t));
 
-        original = (u32*)control.m_Rw;
+        original = (u32*)ctrl.GetRw();
 
         if (rwtrampoline) {
             if (TrampolineSize < 1u * 10u) {
                 return false;
             }  // if
-            __fix_instructions(original, (u32*)control.m_Rx, 1, rwtrampoline, rxtrampoline);
+            __fix_instructions(original, (u32*)ctrl.GetRo(), 1, rwtrampoline, rxtrampoline);
         }  // if
 
         __sync_cmpswap(original, *original, 0x14000000u | (pc_offset & mask));  // "B" ADDR_PCREL26
@@ -608,6 +608,24 @@ bool Hook::HookFuncImpl(void* const symbol, void* const replace, void* const rxt
     }  // if
 
     return true;
+}
+
+uintptr_t Hook::HookFuncCommon(uintptr_t hook, uintptr_t callback, bool do_trampoline) {
+    /* TODO: thread safety */
+
+    R_ABORT_UNLESS(jitTransitionToWritable(&s_HookJit));
+
+    u32* rxtrampoline = NULL;
+    u32* rwtrampoline = NULL;
+    if (do_trampoline) 
+        R_ABORT_UNLESS(AllocForTrampoline(&rxtrampoline, &rwtrampoline));
+
+    if (!HookFuncImpl(reinterpret_cast<void*>(hook), reinterpret_cast<void*>(callback), rxtrampoline, rwtrampoline))
+        EXL_ABORT(exl::result::HookFailed);
+
+    R_ABORT_UNLESS(jitTransitionToExecutable(&s_HookJit));
+
+    return (uintptr_t) rxtrampoline;
 }
 
 //-------------------------------------------------------------------------

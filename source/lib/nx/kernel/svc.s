@@ -2,6 +2,7 @@
 	.section .text.\name, "ax", %progbits
 	.global \name
 	.type \name, %function
+	.hidden \name
 	.align 2
 	.cfi_startproc
 \name:

@@ -11,6 +11,10 @@ extern "C" {
 
     /* Exported by program. */
     extern void exl_main(void*, void*);
+    /* Optionally exported by program. */
+    __attribute__((weak)) extern void exl_init();
+
+    #ifdef EXL_USEFAKEHEAP
 
     char __fake_heap[exl::setting::HeapSize];
 
@@ -22,6 +26,8 @@ extern "C" {
         fake_heap_end   = __fake_heap + exl::setting::HeapSize;
     }
     
+    #endif
+
     void __init_array(void) {
         size_t count;
         size_t i;
@@ -37,18 +43,38 @@ extern "C" {
     
     /* Called when loaded as a module with RTLD. */
     void exl_module_init() {
+        #ifdef EXL_USEFAKEHEAP
         __init_heap();
-        virtmemSetup();
+        #endif
+        exl_init();
+        __init_array();
         exl_main(NULL, NULL);
     }
 
     /* Called when loaded as the entrypoint of the process, like RTLD. */
     void exl_entrypoint_init(void* x0, void* x1) {
+        #ifdef EXL_USEFAKEHEAP
         __init_heap();
+        #endif
+        exl_init();
         __init_array();
-        virtmemSetup();
         exl_main(x0, x1);
     }
 
     void exl_module_fini(void) {}
+
+}
+
+#include <lib/util/soc.hpp>
+#include <lib/util/mem_layout.hpp>
+#include <lib/patch/patcher_impl.hpp>
+
+extern "C" void exl_init() {
+    /* Getting the SOC type in an application context is more effort than it's worth. */
+    #ifndef EXL_AS_MODULE
+    exl::util::impl::InitSocType();
+    #endif
+    exl::util::impl::InitMemLayout();
+    virtmemSetup();
+    exl::patch::impl::InitPatcherImpl();
 }

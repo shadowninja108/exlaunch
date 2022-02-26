@@ -1,6 +1,7 @@
 .macro CODE_BEGIN name
 	.section .text.\name, "ax", %progbits
 	.global \name
+	.hidden \name
 	.type \name, %function
 	.align 2
 	.cfi_startproc
