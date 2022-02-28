@@ -7,4 +7,5 @@ endif
 # Built internal C flags variable.
 export EXL_CFLAGS	:= $(C_FLAGS) -DEXL_LOAD_KIND=$(LOAD_KIND) -DEXL_LOAD_KIND_ENUM=$(LOAD_KIND_ENUM) -DEXL_PROGRAM_ID=0x$(PROGRAM_ID)
 
+include $(MK_PATH)/$(MK_NAME)
 include $(MK_PATH)/common.mk
