@@ -2,6 +2,7 @@
 
 #include "lib/util/cur_proc_handle.hpp"
 #include <cstring>
+#include <algorithm>
 
 namespace exl::util {
 
@@ -22,22 +23,26 @@ namespace exl::util {
         MemoryInfo meminfo {
             .addr = alignedRo
         };
-        uintptr_t offset;
+        uintptr_t offset = 0;
         u32 pageinfo;
         do {
             /* Query next range. */
             R_ABORT_UNLESS(svcQueryMemory(&meminfo, &pageinfo, meminfo.addr + meminfo.size));
 
             /* Calculate correct pointers for each mapping. */
-            auto cro = meminfo.addr;
-            offset = cro - alignedRo;
-            auto crw = (void*) (baseRw + offset);
+            u64 cro = alignedRo + offset;
+            u64 sizeLeft = alignedSize - offset;
+            u64 offsetInCurRange = cro - meminfo.addr;
+            auto size = std::min(sizeLeft, meminfo.size - offsetInCurRange);
+            void* crw = (void*) (baseRw + offset);
 
             /* Map. */
-            R_ABORT_UNLESS(svcMapProcessMemory(crw, procHandle, cro, meminfo.size));
+            R_ABORT_UNLESS(svcMapProcessMemory(crw, procHandle, cro, size));
+
+            offset += size;
             
         /* Exit once we've mapped enough pages. */
-        } while(offset <= alignedSize);
+        } while(offset < alignedSize);
 
         /* Setup RW pointer to match same physical location of RX. */
         auto rw = baseRw + (ro - alignedRo);
@@ -74,19 +79,23 @@ namespace exl::util {
         MemoryInfo meminfo {
             .addr = alignedRo
         };
-        uintptr_t offset;
+        uintptr_t offset = 0;
         u32 pageinfo;
         do {
             /* Query next range. */
             R_ABORT_UNLESS(svcQueryMemory(&meminfo, &pageinfo, meminfo.addr + meminfo.size));
 
             /* Calculate correct pointers for each mapping. */
-            auto ro = meminfo.addr;
-            offset = ro - alignedRo;
-            auto rw = (void*) (alignedRw + offset);
+            u64 cro = alignedRo + offset;
+            u64 sizeLeft = alignedSize - offset;
+            u64 offsetInCurRange = cro - meminfo.addr;
+            auto size = std::min(sizeLeft, meminfo.size - offsetInCurRange);
+            void* crw = (void*) (alignedRw + offset);
 
             /* Unmap. */
-            R_ABORT_UNLESS(svcUnmapProcessMemory(rw, procHandle, ro, meminfo.size));
+            R_ABORT_UNLESS(svcUnmapProcessMemory(crw, procHandle, cro, size));
+            
+            offset += size;
 
         /* Exit once we've unmapped enough pages. */
         } while(offset < alignedSize);

@@ -16,7 +16,7 @@ Result jitCreate(Jit* j, void* rx_addr, size_t size)
     // Use new CodeMemory object introduced in [4.0.0+], if available.
     // On [5.0.0+] this is only usable with a kernel patch, as svcControlCodeMemory now errors if it's used under the same process which owns the object.
     // The homebrew loading environment is responsible for hinting the syscalls if they are available/usable for jit.
-    if (false) {
+    if (true) {
         type = JitType_CodeMemory;
     }
     // Fall back to JitType_SetProcessMemoryPermission if available.
