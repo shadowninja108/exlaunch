@@ -1,7 +1,7 @@
 #pragma once
 
 /* Require an externally linked heap implementation to be provided if fake heap isn't used. */
-#ifndef EXL_USEFAKEHEAP
+#ifndef EXL_USE_FAKEHEAP
 
 #include <cstddef>
 

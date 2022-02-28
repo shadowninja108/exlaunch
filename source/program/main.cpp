@@ -15,6 +15,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     envSetOwnProcessHandle(exl::util::proc_handle::Get());
     exl::hook::Initialize();
 
+    /* If an integer is provided instead of a symbol, it will be treated as an offset relative to main. */
     INJECT_HOOK_T(nn::oe::SetCopyrightVisibility, stubCopyright);
 
     /*

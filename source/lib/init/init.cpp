@@ -14,7 +14,7 @@ extern "C" {
     /* Optionally exported by program. */
     __attribute__((weak)) extern void exl_init();
 
-    #ifdef EXL_USEFAKEHEAP
+    #ifdef EXL_USE_FAKEHEAP
 
     char __fake_heap[exl::setting::HeapSize];
 
@@ -43,7 +43,7 @@ extern "C" {
     
     /* Called when loaded as a module with RTLD. */
     void exl_module_init() {
-        #ifdef EXL_USEFAKEHEAP
+        #ifdef EXL_USE_FAKEHEAP
         __init_heap();
         #endif
         exl_init();
@@ -53,7 +53,7 @@ extern "C" {
 
     /* Called when loaded as the entrypoint of the process, like RTLD. */
     void exl_entrypoint_init(void* x0, void* x1) {
-        #ifdef EXL_USEFAKEHEAP
+        #ifdef EXL_USE_FAKEHEAP
         __init_heap();
         #endif
         exl_init();
