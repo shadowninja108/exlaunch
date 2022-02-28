@@ -2,9 +2,9 @@
 
 #include <lib.hpp>
 
-namespace shimmer::patch {
+namespace exl::patch {
     
-    class RandomAccessPatcher : public exl::patch::PatcherImpl {
+    class RandomAccessPatcher : public PatcherImpl {
         private:
             uintptr_t m_Lowest = UINTPTR_MAX;
             uintptr_t m_Highest = UINTPTR_MAX;
