@@ -16,6 +16,8 @@ export PYTHON="python3"
 export MAKE_ARGS="-j8 V=1"
 # JSON to use to make .npdm
 export NPDM_JSON="qlaunch.json"
+# Additional C flags to use.
+export C_FLAGS=""
 
 # AsRtld settings
 #------------------------

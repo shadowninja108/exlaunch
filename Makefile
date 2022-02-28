@@ -4,7 +4,7 @@ endif
 
 .PHONY: clean all
 
-# Forward defines.
-export EXL_CFLAGS	:= -DEXL_LOAD_KIND=$(LOAD_KIND) -DEXL_LOAD_KIND_ENUM=$(LOAD_KIND_ENUM) -DEXL_PROGRAM_ID=0x$(PROGRAM_ID) -DNNSDK
+# Built internal C flags variable.
+export EXL_CFLAGS	:= $(C_FLAGS) -DEXL_LOAD_KIND=$(LOAD_KIND) -DEXL_LOAD_KIND_ENUM=$(LOAD_KIND_ENUM) -DEXL_PROGRAM_ID=0x$(PROGRAM_ID)
 
 include $(MK_PATH)/common.mk
