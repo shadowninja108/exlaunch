@@ -39,7 +39,7 @@ namespace exl::util::proc_handle {
 
             // Create a new thread to receive our handle.
             Handle thread_handle;
-            R_ABORT_UNLESS(svcCreateThread(&thread_handle, (void*) &ReceiveProcessHandleThreadMain, (void *)(uintptr_t)server_handle, temp_thread_stack + sizeof(temp_thread_stack), 0x20, 3));
+            R_ABORT_UNLESS(svcCreateThread(&thread_handle, (void*) &ReceiveProcessHandleThreadMain, (void *)(uintptr_t)server_handle, temp_thread_stack + sizeof(temp_thread_stack), 0x20, 2));
 
             // Start the new thread.
             R_ABORT_UNLESS(svcStartThread(thread_handle));
