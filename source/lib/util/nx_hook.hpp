@@ -45,6 +45,7 @@ namespace exl::util {
         static size_t s_UsedInlineHooks;
 
         static uintptr_t HookFuncCommon(uintptr_t hook, uintptr_t callback, bool do_trampoline = false);
+        static void InlineHook(uintptr_t hook, uintptr_t callback, bool is_extended = false);
         // static void InlineHook(uintptr_t hook, uintptr_t callback, bool is_extended = false);
         static Result AllocForTrampoline(uint32_t** rx, uint32_t** rw);
 
@@ -123,8 +124,14 @@ namespace exl::util {
         static Func1 HookFunc(Func1 hook, Func2 callback, bool do_trampoline = false) {
             return HookFunc(reinterpret_cast<Func1>(hook), reinterpret_cast<Func1>(callback), do_trampoline);
         }
-        static void InlineHook(uintptr_t hook, uintptr_t callback, bool is_extended = false);
+        
+        static void InlineHook(uintptr_t hook, InlineCallback callback) {
+            InlineHook(hook, reinterpret_cast<uintptr_t>(callback), false);
+        }
 
+        static void InlineHook(uintptr_t hook, ExInlineCallback callback) {
+            InlineHook(hook, reinterpret_cast<uintptr_t>(callback), true);
+        }
     };
     //static void InlineHook(uintptr_t addr, InlineCallback* callback);
 };

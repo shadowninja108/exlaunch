@@ -559,11 +559,6 @@ void Hook::Initialize() {
     R_ABORT_UNLESS(jitCreate(&s_InlineHookJit, (void*)ALIGN_DOWN(mem.addr + mem.size - InlineHookPoolSize, PAGE_SIZE), InlineHookPoolSize));
 
     s_UsedInlineHooks = 0;
-
-    /* TODO: inline hooks */
-    /*static u8 _inlhk_rw[InlineHookPoolSize];
-    rc = jitCreate(&__inlhk_jit, &_inlhk_rw, InlineHookPoolSize);
-    R_ABORT_UNLESS(rc);*/
 }
 
 //-------------------------------------------------------------------------
@@ -689,49 +684,5 @@ void Hook::InlineHook(uintptr_t hook, uintptr_t callback, bool is_extended) {
 
     s_UsedInlineHooks++;
 }
-
-//-------------------------------------------------------------------------
-
-/*u64 inline_hook_curridx = 0;
-
-extern "C" void A64InlineHook(void* const symbol, void* const replace) {
-    u64 start = (u64)&InlineHandlerStart;
-    u64 end = (u64)&InlineHandlerEnd;
-
-    // make sure inline hook handler constexpr is correct
-    if(InlineHookHandlerSize != end - start)
-        R_ABORT_UNLESS(-1);
-
-    // prepare to copy handler
-    jitTransitionToWritable(&__inlhk_jit);
-    InlineHookEntry* rw_start = (InlineHookEntry*)__inlhk_jit.rw_addr;
-    InlineHookEntry* rw = rw_start + inline_hook_curridx;
-
-    // copy handler
-    memcpy(rw->handler, (void*)start, InlineHookHandlerSize);
-
-    // prepare to hook
-    jitTransitionToExecutable(&__inlhk_jit);
-    InlineHookEntry* rx_start = (InlineHookEntry*)__inlhk_jit.rx_addr;
-    InlineHookEntry* rx = rx_start + inline_hook_curridx;
-
-    // hook to call the handler
-    void* trampoline;
-    A64HookFunction(symbol, rx->handler, &trampoline);
-
-    // write trampoline/callback to entry
-    jitTransitionToWritable(&__inlhk_jit);
-    rw->callback = replace;
-    rw->m_Trampoline = trampoline;
-
-    // finalize, make handler executable
-    jitTransitionToExecutable(&__inlhk_jit);
-
-    inline_hook_curridx++;
-
-    //if(inline_hook_curridx > InlineHookMax)
-        //skyline::logger::s_Instance->LogFormat("[A64InlineHook] inline hook pool exausted!");
-}
-*/
 
 };
