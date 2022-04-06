@@ -35,7 +35,8 @@ static bool g_IsLegacyKernel;
 
 uintptr_t __virtmem_rng(void) {
     /* lol. */
-    return svcGetSystemTick();
+    static u64 counter = 0;
+    return svcGetSystemTick() * ++counter;
 }
 
 static Result _memregionInitWithInfo(MemRegion* r, InfoType id0_addr, InfoType id0_sz) {

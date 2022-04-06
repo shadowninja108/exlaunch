@@ -107,6 +107,46 @@ namespace exl::hook {
         UNREACHABLE;
     }
 
+    /**
+     * @brief Hooks an address in memory and calls the provided callback (limited context)
+     * 
+     * @param hook The address in memory to hook
+     * @param callback The callback to call (must receive a limited context)
+     */
+    inline void InlineHook(const void* hook, util::Hook::InlineCallback callback) {
+        util::Hook::InlineHook(reinterpret_cast<uintptr_t>(hook), callback);
+    }
+
+    /**
+     * @brief Hooks an address in memory and calls the provided callback (extended context)
+     * 
+     * @param hook The address in memory to hook
+     * @param callback The callback to call (must receive an extended context)
+     */
+    inline void InlineHook(const void* hook, util::Hook::ExInlineCallback callback) {
+        util::Hook::InlineHook(reinterpret_cast<uintptr_t>(hook), callback);
+    }
+
+    /**
+     * @brief Hooks an offset from the start of the main module and calls the provided callback (limited context)
+     * 
+     * @param hook The offset to hook
+     * @param callback The callback to call (must receive a limited context)
+     */
+    inline void InlineHook(uintptr_t hook, util::Hook::InlineCallback callback) {
+        util::Hook::InlineHook(GetTargetOffset(hook), callback);
+    }
+
+    /**
+     * @brief Hooks an offset from the start of the main module and calls the provided callback (extended context)
+     * 
+     * @param hook The offset to hook
+     * @param callback The callback to call (must receive an extended context)
+     */
+    inline void InlineHook(uintptr_t hook, util::Hook::ExInlineCallback callback) {
+        util::Hook::InlineHook(GetTargetOffset(hook), callback);
+    }
+
     template<typename T>
     inline T HookFunc(T hook, T callback, bool do_trampoline = false) {
         return util::Hook::HookFunc<T>(hook, callback, do_trampoline);
