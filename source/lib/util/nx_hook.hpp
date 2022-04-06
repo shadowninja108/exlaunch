@@ -41,8 +41,11 @@ namespace exl::util {
     class Hook {
         private:
         static Jit s_HookJit;
+        static Jit s_InlineHookJit;
+        static size_t s_UsedInlineHooks;
 
         static uintptr_t HookFuncCommon(uintptr_t hook, uintptr_t callback, bool do_trampoline = false);
+        // static void InlineHook(uintptr_t hook, uintptr_t callback, bool is_extended = false);
         static Result AllocForTrampoline(uint32_t** rx, uint32_t** rw);
 
         public:
@@ -53,10 +56,32 @@ namespace exl::util {
             u32 r;  ///< AArch32 register view.
         } CpuRegister;
 
+        typedef union {
+            u128 q;
+            f64  d[2];
+            f32  s[4];
+            u16  h[8];
+            u8   b[16];
+        } FpuRegister;
+
+        static_assert(sizeof(CpuRegister) == sizeof(u64));
+        static_assert(sizeof(FpuRegister) == sizeof(u128));
+
         struct InlineCtx {
-            CpuRegister registers[29];
+            CpuRegister registers[31];
         };
+
+        struct ExInlineCtx {
+            CpuRegister registers[31];
+            CpuRegister sp;
+            FpuRegister v[32];
+        };
+
+        static_assert(sizeof(InlineCtx) == 0xF8);
+        static_assert(sizeof(ExInlineCtx) == 0x300);
+
         using InlineCallback = void (*)(InlineCtx*);
+        using ExInlineCallback = void (*)(ExInlineCtx*);
 
         static void Initialize();
 
@@ -98,6 +123,7 @@ namespace exl::util {
         static Func1 HookFunc(Func1 hook, Func2 callback, bool do_trampoline = false) {
             return HookFunc(reinterpret_cast<Func1>(hook), reinterpret_cast<Func1>(callback), do_trampoline);
         }
+        static void InlineHook(uintptr_t hook, uintptr_t callback, bool is_extended = false);
 
     };
     //static void InlineHook(uintptr_t addr, InlineCallback* callback);

@@ -29,6 +29,9 @@ typedef volatile s32 vs32;   ///<  32-bit volatile signed integer.
 typedef volatile s64 vs64;   ///<  64-bit volatile signed integer.
 typedef volatile s128 vs128; ///< 128-bit volatile signed integer.
 
+typedef double f64;
+typedef float f32;
+
 typedef unsigned char   uchar;
 typedef	unsigned short	ushort;
 typedef	unsigned int	uint;	

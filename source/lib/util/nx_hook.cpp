@@ -32,6 +32,7 @@
 
 #include "nx_hook.hpp"
 #include "rw_pages.hpp"
+#include "mem_layout.hpp"
 
 
 #define __attribute __attribute__
@@ -62,17 +63,22 @@ namespace exl::util {
         constexpr size_t HookPoolSize = ALIGN_UP(sizeof(HookPool), PAGE_SIZE);
 
         // Inline hooking constants
-        extern const u64 InlineHandlerStart;
-        extern const u64 InlineHandlerEnd;
-        constexpr size_t InlineHookHandlerSize = 0x9C; // correct if handler size changes
+        constexpr size_t InlineHookHandlerSize = 0xC; // correct if handler size changes
         struct PACKED InlineHookEntry {
-            char m_Handler[InlineHookHandlerSize];
+            std::array<u8, InlineHookHandlerSize> m_Handler;
+            void* m_CurrentHandler;
             void* m_Callback;
             void* m_Trampoline;
         };
         constexpr size_t InlineHookSize = sizeof(InlineHookEntry);
         constexpr size_t InlineHookMax = 1;
         constexpr size_t InlineHookPoolSize = InlineHookSize * InlineHookMax;
+
+        extern "C" {
+            extern const u8  InlineHandler[InlineHookSize];
+            extern const u64 InlineHandlerImpl;
+            extern const u64 ExInlineHandlerImpl;
+        }
 
         typedef uint32_t* __restrict* __restrict instruction;
         typedef struct {
@@ -522,6 +528,8 @@ namespace exl::util {
 //-------------------------------------------------------------------------
 
 Jit Hook::s_HookJit;
+Jit Hook::s_InlineHookJit;
+size_t Hook::s_UsedInlineHooks;
 //static nn::os::MutexType hookMutex;
 
 //-------------------------------------------------------------------------
@@ -533,6 +541,24 @@ void Hook::Initialize() {
 
     R_ABORT_UNLESS(jitCreate(&s_HookJit, &hookJitRw, HookPoolSize));
     R_ABORT_UNLESS(jitTransitionToExecutable(&s_HookJit));
+
+    auto current_search_addr = GetMainModuleInfo().m_Text.m_Start - InlineHookPoolSize;
+
+    MemoryInfo mem;
+    while (true) {
+        u32 page_info;
+        if (R_SUCCEEDED(svcQueryMemory(&mem, &page_info, current_search_addr)) && mem.type == MemType_Unmapped
+            && mem.size >= ALIGN_UP(InlineHookPoolSize, PAGE_SIZE))
+        {
+            break;
+        }
+
+        current_search_addr -= PAGE_SIZE;
+    }
+
+    R_ABORT_UNLESS(jitCreate(&s_InlineHookJit, (void*)ALIGN_DOWN(mem.addr + mem.size - InlineHookPoolSize, PAGE_SIZE), InlineHookPoolSize));
+
+    s_UsedInlineHooks = 0;
 
     /* TODO: inline hooks */
     /*static u8 _inlhk_rw[InlineHookPoolSize];
@@ -626,6 +652,42 @@ uintptr_t Hook::HookFuncCommon(uintptr_t hook, uintptr_t callback, bool do_tramp
     R_ABORT_UNLESS(jitTransitionToExecutable(&s_HookJit));
 
     return (uintptr_t) rxtrampoline;
+}
+
+void Hook::InlineHook(uintptr_t hook, uintptr_t callback, bool is_extended) {
+    R_ABORT_UNLESS(jitTransitionToExecutable(&s_HookJit));
+
+    auto handler_start = (uintptr_t)&InlineHandler;
+    auto handler_end = handler_start + InlineHookHandlerSize;
+
+    EXL_ASSERT(*reinterpret_cast<u32*>(handler_end) == 0x5F4C5845, "Invalid handler size");
+
+    EXL_ASSERT(InlineHookSize > s_UsedInlineHooks, "Number of inline hooks has exceeded the maximum");
+
+    auto& rx_entries = *reinterpret_cast<std::array<InlineHookEntry, InlineHookMax>*>(s_InlineHookJit.rx_addr);
+    auto& rx = rx_entries[s_UsedInlineHooks];
+
+    uintptr_t trampoline = HookFuncCommon(hook, reinterpret_cast<uintptr_t>(rx.m_Handler.data()), true);
+
+    jitTransitionToWritable(&s_InlineHookJit);
+
+    auto& rw_entries = *reinterpret_cast<std::array<InlineHookEntry, InlineHookMax>*>(s_InlineHookJit.rw_addr);
+    auto& rw = rw_entries[s_UsedInlineHooks];
+
+    std::memcpy(rw.m_Handler.data(), reinterpret_cast<const void*>(InlineHandler), InlineHookHandlerSize);
+
+    if (is_extended) {
+        rw.m_CurrentHandler = const_cast<void*>(reinterpret_cast<const void*>(&ExInlineHandlerImpl));
+    } else {
+        rw.m_CurrentHandler = const_cast<void*>(reinterpret_cast<const void*>(&InlineHandlerImpl));
+    }
+
+    rw.m_Callback = reinterpret_cast<void*>(callback);
+    rw.m_Trampoline = reinterpret_cast<void*>(trampoline);
+
+    jitTransitionToExecutable(&s_InlineHookJit);
+
+    s_UsedInlineHooks++;
 }
 
 //-------------------------------------------------------------------------
