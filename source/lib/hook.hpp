@@ -107,6 +107,22 @@ namespace exl::hook {
         UNREACHABLE;
     }
 
+    inline void InlineHook(const void* hook, util::Hook::InlineCallback callback) {
+        util::Hook::InlineHook(reinterpret_cast<uintptr_t>(hook), reinterpret_cast<uintptr_t>(callback), false);
+    }
+
+    inline void InlineHook(const void* hook, util::Hook::ExInlineCallback callback) {
+        util::Hook::InlineHook(reinterpret_cast<uintptr_t>(hook), reinterpret_cast<uintptr_t>(callback), true);
+    }
+
+    inline void InlineHook(uintptr_t hook, util::Hook::InlineCallback callback) {
+        util::Hook::InlineHook(GetTargetOffset(hook), reinterpret_cast<uintptr_t>(callback), false);
+    }
+
+    inline void InlineHook(uintptr_t hook, util::Hook::ExInlineCallback callback) {
+        util::Hook::InlineHook(GetTargetOffset(hook), reinterpret_cast<uintptr_t>(callback), true);
+    }
+
     template<typename T>
     inline T HookFunc(T hook, T callback, bool do_trampoline = false) {
         return util::Hook::HookFunc<T>(hook, callback, do_trampoline);
