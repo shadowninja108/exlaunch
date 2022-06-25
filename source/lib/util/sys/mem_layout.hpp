@@ -66,4 +66,5 @@ namespace exl::util {
 
     
     static inline const ModuleInfo& GetSelfModuleInfo() { return GetModuleInfo(mem_layout::s_SelfModuleIdx); }
+    static inline const ModuleInfo& GetSdkModuleInfo() { return GetModuleInfo(mem_layout::s_ModuleCount - 1); }
 };

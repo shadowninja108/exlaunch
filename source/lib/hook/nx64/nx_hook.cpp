@@ -31,7 +31,7 @@
 #include <stdlib.h>
 
 #include "nx_hook.hpp"
-#include "rw_pages.hpp"
+#include "util/sys/rw_pages.hpp"
 
 
 #define __attribute __attribute__
@@ -48,7 +48,7 @@
 #define __atomic_increase(p) __sync_add_and_fetch(p, 1)
 #define __sync_cmpswap(p, v, n) __sync_bool_compare_and_swap(p, v, n)
 
-namespace exl::util {
+namespace exl::hook::nx64 {
 
     namespace {
 
@@ -521,12 +521,12 @@ namespace exl::util {
 
 //-------------------------------------------------------------------------
 
-Jit Hook::s_HookJit;
+static Jit s_HookJit;
 //static nn::os::MutexType hookMutex;
 
 //-------------------------------------------------------------------------
 
-void Hook::Initialize() {
+void Initialize() {
     /* TODO: thread safety */
 
     alignas(PAGE_SIZE) static u8 hookJitRw[HookPoolSize] = {};
@@ -542,7 +542,7 @@ void Hook::Initialize() {
 
 //-------------------------------------------------------------------------
 
-Result Hook::AllocForTrampoline(uint32_t** rx, uint32_t** rw) {
+Result AllocForTrampoline(uint32_t** rx, uint32_t** rw) {
     static_assert((TrampolineSize * sizeof(uint32_t)) % 8 == 0, "8-byte align");
     static volatile s32 index = -1;
 
@@ -610,9 +610,12 @@ static bool HookFuncImpl(void* const symbol, void* const replace, void* const rx
     return true;
 }
 
-uintptr_t Hook::HookFuncCommon(uintptr_t hook, uintptr_t callback, bool do_trampoline) {
-    /* TODO: thread safety */
+uintptr_t HookFuncCommon(uintptr_t hook, uintptr_t callback, bool do_trampoline) {
+    
+    EXL_ASSERT(hook != 0);
+    EXL_ASSERT(callback != 0);
 
+    /* TODO: thread safety */
     R_ABORT_UNLESS(jitTransitionToWritable(&s_HookJit));
 
     u32* rxtrampoline = NULL;

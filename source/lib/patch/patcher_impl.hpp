@@ -1,8 +1,8 @@
 #pragma once
 
-#include <lib/util/rw_pages.hpp>
+#include <lib/util/sys/rw_pages.hpp>
+#include <lib/util/sys/mem_layout.hpp>
 #include <lib/util/typed_storage.hpp>
-#include <lib/util/mem_layout.hpp>
 #include <optional>
 
 namespace exl::patch {

@@ -1,18 +1,18 @@
 #pragma once
 
-#include "common.hpp"
-#include  <concepts>
+#include <common.hpp>
+#include <concepts>
 
-namespace exl::asml {
+namespace exl::util {
     
     template<
         std::integral Underlying, 
-        Underlying Low,
-        Underlying High = Low + 1>
+        Underlying _Low,
+        Underlying _High = _Low + 1>
     struct Mask {
-        static constexpr Underlying LowBit = Low;
-        static constexpr Underlying HighBit = High;
-        static constexpr Underlying Count = High - Low;
+        static constexpr Underlying Low = _Low;
+        static constexpr Underlying High = _High;
+        static constexpr Underlying Count = _High - _Low;
         static constexpr Underlying Value() {
             auto base = (1 << Count) - 1;
             return base << Low;
@@ -33,7 +33,7 @@ namespace exl::asml {
             /* Take out the bits we want. */
             auto value = m_Data & Mask.Value();
             /* Shift down the bits. */
-            return value >> Mask.LowBit;
+            return value >> Mask.Low;
         }
 
         template<Mask Mask>
@@ -42,7 +42,7 @@ namespace exl::asml {
             m_Data &= ~Mask.Value();
 
             /* Prepare value to be written. */
-            auto v = value << Mask.LowBit;
+            auto v = value << Mask.Low;
             v &= Mask.Value();
 
             /* OR in the bits. */

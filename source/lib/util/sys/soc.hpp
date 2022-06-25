@@ -14,7 +14,7 @@ namespace exl::util {
 
         static inline void InitSocType() {
             SplHardwareType hwtype;
-            R_ABORT_UNLESS(smcGetConfig(SplConfigItem_HardwareType, (u64*)&hwtype));
+            R_ABORT_UNLESS(smcGetConfig(SplConfigItem_HardwareType, reinterpret_cast<u64*>(&hwtype)));
                             
             switch (hwtype) {
                 case SplHardwareType_Icosa:

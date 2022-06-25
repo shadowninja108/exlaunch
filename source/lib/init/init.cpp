@@ -65,8 +65,8 @@ extern "C" {
 
 }
 
-#include <lib/util/soc.hpp>
-#include <lib/util/mem_layout.hpp>
+#include <lib/util/sys/soc.hpp>
+#include <lib/util/sys/mem_layout.hpp>
 #include <lib/patch/patcher_impl.hpp>
 
 extern "C" void exl_init() {

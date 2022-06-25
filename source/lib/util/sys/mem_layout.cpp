@@ -9,6 +9,7 @@ extern "C" {
 }
 
 namespace exl::util {
+
     
     void impl::InitMemLayout() {
         /* Setup loop, starting address zero. */
