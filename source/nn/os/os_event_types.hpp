@@ -15,25 +15,36 @@
  */
 
 #pragma once
-
-#include "nn/nn_common.hpp"
 #include "impl/os_internal_critical_section.hpp"
+#include "impl/os_internal_condition_variable.hpp"
 
 namespace nn::os {
 
-    struct ThreadType;
+    namespace impl {
 
-    struct MutexType {
-        enum State : u8 {
+        class MultiWaitObjectList;
+
+    }
+
+    struct EventType {
+        enum State {
             State_NotInitialized = 0,
             State_Initialized    = 1,
         };
 
-        State state;
-        bool is_recursive;
-        s32 lock_level;
-        s32 nest_count;
-        ThreadType *owner_thread;
-        detail::InternalCriticalSectionStorage critical_section;
+        /* List stuff. */
+        u8 _0[0x10];
+
+        bool signaled;
+        bool initially_signaled;
+        u8 clear_mode;
+        u8 state;
+        u32 broadcast_counter_low;
+        u32 broadcast_counter_high;
+
+        detail::InternalCriticalSectionStorage cs_event;
+        detail::InternalConditionVariableStorage cv_signaled;
     };
+    static_assert(std::is_trivial<EventType>::value);
+
 }

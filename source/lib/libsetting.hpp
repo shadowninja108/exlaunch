@@ -15,7 +15,7 @@ namespace exl::setting {
     };
     /* Ensure consistency with preprocessor constants. */
     static_assert(EXL_LOAD_KIND_KIP     == static_cast<int>(LoadKind::Kip), "");
-    static_assert(EXL_LOAD_KIND_ASRTLD    == static_cast<int>(LoadKind::AsRtld), "");
+    static_assert(EXL_LOAD_KIND_ASRTLD  == static_cast<int>(LoadKind::AsRtld), "");
     static_assert(EXL_LOAD_KIND_MODULE  == static_cast<int>(LoadKind::Module), "");
 
     static constexpr LoadKind SelfLoadKind = LoadKind::EXL_LOAD_KIND;

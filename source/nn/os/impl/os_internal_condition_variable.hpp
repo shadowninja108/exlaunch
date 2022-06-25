@@ -52,7 +52,6 @@ namespace nn::os::detail {
             }
     };
 
-    /* TODO: storage. */
-    using InternalConditionVariableStorage = InternalConditionVariable;
+    using InternalConditionVariableStorage = util::TypedStorage<InternalConditionVariable>;
 
 }

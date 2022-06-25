@@ -15,25 +15,23 @@
  */
 
 #pragma once
-
-#include "nn/nn_common.hpp"
-#include "impl/os_internal_critical_section.hpp"
+#include <nn/time.hpp>
+#include "os_event_common.hpp"
 
 namespace nn::os {
 
-    struct ThreadType;
+    struct EventType;
+    struct MultiWaitHolderType;
 
-    struct MutexType {
-        enum State : u8 {
-            State_NotInitialized = 0,
-            State_Initialized    = 1,
-        };
+    void InitializeEvent(EventType *event, bool signaled, EventClearMode clear_mode);
+    void FinalizeEvent(EventType *event);
 
-        State state;
-        bool is_recursive;
-        s32 lock_level;
-        s32 nest_count;
-        ThreadType *owner_thread;
-        detail::InternalCriticalSectionStorage critical_section;
-    };
+    void SignalEvent(EventType *event);
+    void WaitEvent(EventType *event);
+    bool TryWaitEvent(EventType *event);
+    bool TimedWaitEvent(EventType *event, TimeSpan timeout);
+    void ClearEvent(EventType *event);
+
+    void InitializeMultiWaitHolder(MultiWaitHolderType *multi_wait_holder, EventType *event);
+
 }
