@@ -97,8 +97,8 @@ namespace exl::util {
 
                     /* Store built module info. */
                     impl::mem_layout::s_ModuleInfos[nextModIdx] = curModInfo;
-                    util::mem_layout::s_ModuleCount = nextModIdx;
                     nextModIdx++;
+                    util::mem_layout::s_ModuleCount = nextModIdx;
 
                     /* Back to initial state. */
                     reset();
