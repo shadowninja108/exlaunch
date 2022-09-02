@@ -34,8 +34,17 @@ with FTP() as ftp:
     pl_sd_out = pathlib.PurePosixPath(sd_out)
     for i in range(len(pl_sd_out.parents)-2, -1, -1):
         d = pl_sd_out.parents[i]
-        ftp.mkd(str(d))
-    ftp.mkd(str(pl_sd_out))
+        try:
+            ftp.mkd(str(d))
+        except ftplib.error_perm as e:
+            # probably a "File exists" error
+            pass
+
+    try:
+        ftp.mkd(str(pl_sd_out))
+    except ftplib.error_perm as e:
+        # probably a "File exists" error
+        pass
     
     # Move to created directory
     ftp.cwd(str(pl_sd_out))
