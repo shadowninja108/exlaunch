@@ -13,7 +13,7 @@ namespace exl::armv8::inst::impl::opx101 {
 
         ACCESSOR(Sf,    31);
         ACCESSOR(Opc,   29, 31);
-        ACCESSOR(N,     22);
+        ACCESSOR(N,     21);
         ACCESSOR(Immr,  16, 22);
         ACCESSOR(Imms,  10, 16);
         ACCESSOR(Rn,    5, 10);

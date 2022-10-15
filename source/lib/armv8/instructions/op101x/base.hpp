@@ -18,3 +18,4 @@ namespace exl::armv8::inst::impl {
 
 #include "hints/base.hpp"
 #include "unconditional_branch_immediate/base.hpp"
+#include "unconditional_branch_register/base.hpp"

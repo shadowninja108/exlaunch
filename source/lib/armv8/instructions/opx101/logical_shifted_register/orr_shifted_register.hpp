@@ -13,19 +13,12 @@ namespace exl::armv8::inst {
         ACCESSOR(Rm,    16, 21);
         ACCESSOR(Imm6,  10, 16);
 
-        enum ShiftType : u8 {
-            LSL = 0b00,
-            LSR = 0b01,
-            ASR = 0b10,
-            ROR = 0b11,
-        };
-
         constexpr inline static auto GetSf(reg::Register rd, reg::Register rn, reg::Register rm) {
             /* TODO: static_assert(rd.Is64() == rn.Is64() && rn.Is64() == rm.Is64(), ""); */
             return rd.Is64();
         }
 
-        constexpr OrrShiftedRegister(reg::Register rd, reg::Register rn, reg::Register rm, ShiftType shift, u16 amount)
+        constexpr OrrShiftedRegister(reg::Register rd, reg::Register rn, reg::Register rm, ShiftType shift = ShiftType_LSL, u16 amount = 0)
         : LogicalShiftedRegister(GetSf(rd, rn, rm), Opc) {
             SetShift(shift);
             SetN(0);
@@ -36,10 +29,28 @@ namespace exl::armv8::inst {
         }
 
     };
+    
+    static_assert(OrrShiftedRegister(reg::X0, reg::X1,  reg::X2).Value()    == 0xAA020020, "");
+    static_assert(OrrShiftedRegister(reg::X3, reg::X4,  reg::X5).Value()    == 0xAA050083, "");
+    static_assert(OrrShiftedRegister(reg::X6, reg::X7,  reg::X8).Value()    == 0xAA0800E6, "");
+    static_assert(OrrShiftedRegister(reg::X9, reg::X10, reg::X11).Value()   == 0xAA0B0149, "");
+
+    static_assert(OrrShiftedRegister(reg::X0, reg::X1,  reg::X2,    ShiftType_LSR, 8).Value()   == 0xAA422020, "");
+    static_assert(OrrShiftedRegister(reg::X3, reg::X4,  reg::X5,    ShiftType_LSR, 8).Value()   == 0xAA452083, "");
+    static_assert(OrrShiftedRegister(reg::X6, reg::X7,  reg::X8,    ShiftType_LSR, 8).Value()   == 0xAA4820E6, "");
+    static_assert(OrrShiftedRegister(reg::X9, reg::X10, reg::X11,   ShiftType_LSR, 8).Value()   == 0xAA4B2149, "");
+
+    static_assert(OrrShiftedRegister(reg::X0, reg::X1,  reg::X2,    ShiftType_ASR, 8).Value()   == 0xAA822020, "");
+    static_assert(OrrShiftedRegister(reg::X3, reg::X4,  reg::X5,    ShiftType_ASR, 8).Value()   == 0xAA852083, "");
+    static_assert(OrrShiftedRegister(reg::X6, reg::X7,  reg::X8,    ShiftType_ASR, 8).Value()   == 0xAA8820E6, "");
+    static_assert(OrrShiftedRegister(reg::X9, reg::X10, reg::X11,   ShiftType_ASR, 8).Value()   == 0xAA8B2149, "");
+
+    static_assert(OrrShiftedRegister(reg::X0, reg::X1,  reg::X2,    ShiftType_ROR, 8).Value()   == 0xAAC22020, "");
+    static_assert(OrrShiftedRegister(reg::X3, reg::X4,  reg::X5,    ShiftType_ROR, 8).Value()   == 0xAAC52083, "");
+    static_assert(OrrShiftedRegister(reg::X6, reg::X7,  reg::X8,    ShiftType_ROR, 8).Value()   == 0xAAC820E6, "");
+    static_assert(OrrShiftedRegister(reg::X9, reg::X10, reg::X11,   ShiftType_ROR, 8).Value()   == 0xAACB2149, "");
 
 }
 
-#include "lsl.hpp"
-#include "lsr.hpp"
-#include "asr.hpp"
-#include "ror.hpp"
+
+#include "mov_register.hpp"

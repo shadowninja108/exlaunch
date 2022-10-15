@@ -22,3 +22,6 @@ namespace exl::armv8::inst::impl::op100x {
         }
     };
 };
+
+/* TODO: make this work well... */
+// #include "orr_immediate.hpp"

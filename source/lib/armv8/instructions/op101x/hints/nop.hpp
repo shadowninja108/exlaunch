@@ -14,4 +14,6 @@ namespace exl::armv8::inst {
             SetLocalOp2(LocalOp2);
         }
     };
+
+    static_assert(Nop().Value() == 0xD503201F, "");
 }

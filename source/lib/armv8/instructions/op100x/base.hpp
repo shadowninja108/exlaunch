@@ -16,3 +16,4 @@ namespace exl::armv8::inst::impl {
 
 #include "logical_immediate/base.hpp"
 #include "move_wide_immediate/base.hpp"
+#include "pc_rel_addressing/base.hpp"
