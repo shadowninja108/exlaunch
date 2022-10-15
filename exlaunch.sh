@@ -35,6 +35,9 @@ export FTP_PORT="5000"
 export FTP_USERNAME="anonymous"
 export FTP_PASSWORD=""
 
+# Settings for deploying to Ryu. Used by the deploy-ryu.sh script.
+export RYU_PATH="/mnt/c/Users/shado/AppData/Roaming/Ryujinx"
+
 #-------------------------- End of user configuration --------------------------
 
 # Setup common variables.
@@ -72,8 +75,10 @@ elif [ "$1" == "deploy-sd" ]; then
     source $SCRIPTS_PATH/deploy-sd.sh
 elif [ "$1" == "deploy-ftp" ]; then
     $PYTHON $SCRIPTS_PATH/deploy-ftp.py
+elif [ "$1" == "deploy-ryu" ]; then
+     source $SCRIPTS_PATH/deploy-ryu.sh
 elif [ "$1" == "make-npdm-json" ]; then
     $PYTHON $SCRIPTS_PATH/make-npdm-json.py
 else
-    echo "Invalid arg. (build/clean/deploy-sd/deploy-ftp)"
+    echo "Invalid arg. (build/clean/deploy-sd/deploy-ftp/deploy-ryu)"
 fi
