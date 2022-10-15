@@ -19,6 +19,7 @@
 #include "lib/util/sys/mem_layout.hpp"
 #include "lib/util/sys/rw_pages.hpp"
 #include "lib/util/sys/soc.hpp"
+#include "lib/util/modules.hpp"
 #include "lib/util/ptr_path.hpp"
 #include "lib/util/typed_storage.hpp"
 
