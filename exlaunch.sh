@@ -54,7 +54,7 @@ source $SCRIPTS_PATH/target-common.sh
 if [ $LOAD_KIND == "Module" ]; then
     export LOAD_KIND_ENUM=2
     source $SCRIPTS_PATH/target-module.sh
-elif [ $LOAD_KIND == "Rtld" ]; then
+elif [ $LOAD_KIND == "AsRtld" ]; then
     export LOAD_KIND_ENUM=1
     source $SCRIPTS_PATH/target-rtld.sh
 else 
