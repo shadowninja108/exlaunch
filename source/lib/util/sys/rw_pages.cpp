@@ -76,7 +76,7 @@ namespace exl::util {
         /* Only unclaim if this is the owner. */
         if(!m_Owner) return;
 
-        auto& claim = GetClaim();
+        const auto& claim = GetClaim();
 
         /* Flush data. */
         armDCacheFlush((void*)claim.m_Rw, claim.m_Size);

@@ -17,7 +17,7 @@ namespace exl::hook::impl {
         static ALWAYS_INLINE void InstallAtOffset(ptrdiff_t address) {
             _HOOK_STATIC_CALLBACK_ASSERT();
 
-            nx64::HookFuncRaw(util::modules::GetTargetStart() + address, Derived::Callback);
+            nx64::HookFuncRaw<void>(util::modules::GetTargetStart() + address, Derived::Callback);
         }
 
         template<typename R, typename ...A>
@@ -33,7 +33,7 @@ namespace exl::hook::impl {
         static ALWAYS_INLINE void InstallAtPtr(uintptr_t ptr) {
             _HOOK_STATIC_CALLBACK_ASSERT();
             
-            nx64::HookFuncRaw(ptr, Derived::Callback);
+            nx64::HookFuncRaw<void>(ptr, Derived::Callback);
         }
     };
 

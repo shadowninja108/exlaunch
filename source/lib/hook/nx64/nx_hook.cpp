@@ -31,7 +31,7 @@
 #include <stdlib.h>
 
 #include "nx_hook.hpp"
-#include "util/sys/rw_pages.hpp"
+#include "util/sys/jit.hpp"
 
 
 #define __attribute __attribute__
@@ -58,8 +58,10 @@ namespace exl::hook::nx64 {
         constexpr size_t TrampolineSize = MaxInstructions * 10;
         constexpr u64 MaxReferences = MaxInstructions * 2;
         constexpr u32 Aarch64Nop = 0xd503201f;
-        typedef uint32_t HookPool[HookMax][TrampolineSize];
-        constexpr size_t HookPoolSize = ALIGN_UP(sizeof(HookPool), PAGE_SIZE);
+
+        constexpr size_t HookPoolSize = setting::JitSize;
+        typedef uint32_t HookPool[HookPoolSize / (TrampolineSize * sizeof(uint32_t))][TrampolineSize];
+        static_assert(sizeof(HookPool) <= HookPoolSize, "");
 
         // Inline hooking constants
         extern const u64 InlineHandlerStart;
@@ -521,18 +523,12 @@ namespace exl::hook::nx64 {
 
 //-------------------------------------------------------------------------
 
-static Jit s_HookJit;
 //static nn::os::MutexType hookMutex;
 
 //-------------------------------------------------------------------------
 
 void Initialize() {
-    /* TODO: thread safety */
-
-    alignas(PAGE_SIZE) static u8 hookJitRw[HookPoolSize] = {};
-
-    R_ABORT_UNLESS(jitCreate(&s_HookJit, &hookJitRw, HookPoolSize));
-    R_ABORT_UNLESS(jitTransitionToExecutable(&s_HookJit));
+    exl::util::jit::Initialize();
 
     /* TODO: inline hooks */
     /*static u8 _inlhk_rw[InlineHookPoolSize];
@@ -551,8 +547,8 @@ Result AllocForTrampoline(uint32_t** rx, uint32_t** rw) {
     if(i > HookMax)
         return result::HookTrampolineAllocFail;
 
-    HookPool* rwptr = (HookPool*)s_HookJit.rw_addr;
-    HookPool* rxptr = (HookPool*)s_HookJit.rx_addr;
+    HookPool* rwptr = (HookPool*)util::jit::GetRw();
+    HookPool* rxptr = (HookPool*)util::jit::GetRo();
     *rw = (*rwptr)[i];
     *rx = (*rxptr)[i];
 
@@ -616,7 +612,6 @@ uintptr_t HookFuncCommon(uintptr_t hook, uintptr_t callback, bool do_trampoline)
     EXL_ASSERT(callback != 0);
 
     /* TODO: thread safety */
-    R_ABORT_UNLESS(jitTransitionToWritable(&s_HookJit));
 
     u32* rxtrampoline = NULL;
     u32* rwtrampoline = NULL;
@@ -626,7 +621,7 @@ uintptr_t HookFuncCommon(uintptr_t hook, uintptr_t callback, bool do_trampoline)
     if (!HookFuncImpl(reinterpret_cast<void*>(hook), reinterpret_cast<void*>(callback), rxtrampoline, rwtrampoline))
         EXL_ABORT(exl::result::HookFailed);
 
-    R_ABORT_UNLESS(jitTransitionToExecutable(&s_HookJit));
+    util::jit::Flush();
 
     return (uintptr_t) rxtrampoline;
 }

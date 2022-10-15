@@ -16,6 +16,7 @@
 
 #include "lib/util/math/bitset.hpp"
 #include "lib/util/sys/cur_proc_handle.hpp"
+#include "lib/util/sys/jit.hpp"
 #include "lib/util/sys/mem_layout.hpp"
 #include "lib/util/sys/rw_pages.hpp"
 #include "lib/util/sys/soc.hpp"

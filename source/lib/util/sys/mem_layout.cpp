@@ -10,8 +10,7 @@ extern "C" {
 
 namespace exl::util {
 
-    
-    void impl::InitMemLayout() {
+    static void FindModules() {
         /* Setup loop, starting address zero. */
         MemoryInfo meminfo { };
         u32 pageinfo;
@@ -111,9 +110,69 @@ namespace exl::util {
         } while(offset >= prevOffset);
 
         /* Ensure we found a valid self index and module count. */
+        #ifdef EXL_AS_MODULE
         EXL_ASSERT(util::mem_layout::s_SelfModuleIdx != -1);
-        EXL_ASSERT(util::mem_layout::s_ModuleCount != -1);
         EXL_ASSERT(util::mem_layout::s_SelfModuleIdx < util::mem_layout::s_MaxModules);
+        #endif
+        EXL_ASSERT(util::mem_layout::s_ModuleCount != -1);
         EXL_ASSERT(util::mem_layout::s_ModuleCount <= util::mem_layout::s_MaxModules);
+    }
+
+    static Result TryGetAddressFromInfo(InfoType type, uintptr_t* ptr) {
+        return svcGetInfo(static_cast<u64*>(ptr), type, CUR_PROCESS_HANDLE, 0);
+    }
+
+    static uintptr_t GetAddressFromInfo(InfoType type) {
+        uintptr_t addr;
+        EXL_ASSERT(R_SUCCEEDED(TryGetAddressFromInfo(type, &addr)));
+        return addr;
+    }
+
+    static Result InferAslrAndStack() {
+        Result rc = svcUnmapMemory((void*)0xFFFFFFFFFFFFE000UL, (void*)0xFFFFFE000UL, 0x1000);
+        if (R_VALUE(rc) == KERNELRESULT(InvalidMemoryState)) {
+            // Invalid src-address error means that a valid 36-bit address was rejected.
+            // Thus we are 32-bit.
+            util::mem_layout::s_Aslr    = util::Range(0x200000ull, 0x100000000ull);
+            util::mem_layout::s_Stack   = util::Range(0x200000ull, 0x40000000ull);
+        }
+        else if (R_VALUE(rc) == KERNELRESULT(InvalidMemoryRange)) {
+            // Invalid dst-address error means our 36-bit src-address was valid.
+            // Thus we are 36-bit.
+            util::mem_layout::s_Aslr    = util::Range(0x8000000ull, 0x1000000000ull);
+            util::mem_layout::s_Stack   = util::Range(0x8000000ull, 0x80000000ull);
+        }
+        else {
+            // Wat.
+            return MAKERESULT(Module_Libnx, LibnxError_WeirdKernel);
+        }
+
+        return result::Success;
+    }
+
+    static void FindRegions() {
+        util::mem_layout::s_Alias = util::Range(
+            GetAddressFromInfo(InfoType_AliasRegionAddress),
+            GetAddressFromInfo(InfoType_AliasRegionSize)
+        );
+
+        util::mem_layout::s_Heap = util::Range(
+            GetAddressFromInfo(InfoType_HeapRegionAddress),
+            GetAddressFromInfo(InfoType_HeapRegionSize)
+        );
+
+        if(R_FAILED(TryGetAddressFromInfo(InfoType_AslrRegionAddress,   &util::mem_layout::s_Aslr.m_Start)) ||
+           R_FAILED(TryGetAddressFromInfo(InfoType_AslrRegionSize,      &util::mem_layout::s_Aslr.m_Size)) ||
+           R_FAILED(TryGetAddressFromInfo(InfoType_StackRegionAddress,  &util::mem_layout::s_Stack.m_Start)) ||
+           R_FAILED(TryGetAddressFromInfo(InfoType_StackRegionSize,     &util::mem_layout::s_Stack.m_Size))
+        )
+        {
+            EXL_ASSERT(R_SUCCEEDED(InferAslrAndStack()));
+        }
+    }
+
+    void impl::InitMemLayout() {
+        FindModules();
+        FindRegions();
     }
 };

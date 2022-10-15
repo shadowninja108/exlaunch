@@ -23,6 +23,11 @@ namespace exl::util {
     namespace mem_layout {
         static constexpr int s_MaxModules = 13;
         inline int s_ModuleCount = -1;
+        
+        inline Range s_Alias;
+        inline Range s_Heap;
+        inline Range s_Aslr;
+        inline Range s_Stack;
     }
 
     namespace impl {
