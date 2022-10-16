@@ -53,14 +53,14 @@ namespace exl::hook::nx64 {
     namespace {
 
         // Hooking constants
+        constexpr size_t HookPoolSize = setting::JitSize;
         constexpr s64 MaxInstructions = 5;
-        constexpr u64 HookMax = 10;
         constexpr size_t TrampolineSize = MaxInstructions * 10;
+        constexpr u64 HookMax = HookPoolSize / (TrampolineSize * sizeof(uint32_t));
         constexpr u64 MaxReferences = MaxInstructions * 2;
         constexpr u32 Aarch64Nop = 0xd503201f;
 
-        constexpr size_t HookPoolSize = setting::JitSize;
-        typedef uint32_t HookPool[HookPoolSize / (TrampolineSize * sizeof(uint32_t))][TrampolineSize];
+        typedef uint32_t HookPool[HookMax][TrampolineSize];
         static_assert(sizeof(HookPool) <= HookPoolSize, "");
 
         // Inline hooking constants
