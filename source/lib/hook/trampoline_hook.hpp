@@ -50,7 +50,7 @@ namespace exl::hook::impl {
         static ALWAYS_INLINE void InstallAtPtr(uintptr_t ptr) {
             _HOOK_STATIC_CALLBACK_ASSERT();
             
-            OrigRef() = nx64::HookFuncRaw(ptr, Derived::Callback, true);
+            OrigRef() = nx64::HookFuncRaw<CallbackFuncPtr<>>(ptr, Derived::Callback, true);
         }
     };
 
