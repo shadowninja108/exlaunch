@@ -34,8 +34,9 @@ static VirtmemReservation *g_Reservations;
 static bool g_IsLegacyKernel;
 
 uintptr_t __virtmem_rng(void) {
-    /* lol. */
-    return svcGetSystemTick();
+    /* Lazy. */
+    extern u64 exl_random();
+    return exl_random();
 }
 
 static Result _memregionInitWithInfo(MemRegion* r, InfoType id0_addr, InfoType id0_sz) {
