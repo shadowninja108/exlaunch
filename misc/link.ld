@@ -73,7 +73,7 @@ SECTIONS
   } :rodata
   .eh_frame : { KEEP (*(.eh_frame)) } :rodata
 
-  /* Misc .rodata stuffs (build-id, ect) */
+  /* Misc .rodata stuffs (build-id, etc.) */
   .note.gnu.build-id : { *(.note.gnu.build-id) } :rodata
 
   /* Read-write sections */
