@@ -4,12 +4,9 @@
 
 namespace exl::util {
 
-    namespace {
-        std::mt19937_64 s_Rng { svcGetSystemTick() };
-    }
-
     u64 GetRandomU64() {
-        return s_Rng();
+        std::mt19937_64 random { svcGetSystemTick() };
+        return random();
     }
 
     extern "C" u64 exl_random() {

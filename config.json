@@ -155,9 +155,7 @@
 				"svcGetProcessInfo":	"0x7c",
 				"svcCreateResourceLimit":	"0x7d",
 				"svcSetResourceLimitLimitValue":	"0x7e",
-				"svcCallSecureMonitor":	"0x7f",
-				"svcMapInsecureMemory":	"0x90",
-				"svcUnmapInsecureMemory":	"0x91"
+				"svcCallSecureMonitor":	"0x7f"
 			}
 		}, {
 			"type":	"application_type",
