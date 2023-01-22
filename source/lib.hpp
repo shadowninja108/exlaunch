@@ -24,4 +24,9 @@
 #include "lib/util/ptr_path.hpp"
 #include "lib/util/typed_storage.hpp"
 
-#include "lib/hook.hpp"
+#include "lib/hook/base.hpp"
+#include "lib/hook/class.hpp"
+#include "lib/hook/deprecated.hpp"
+#include "lib/hook/inline.hpp"
+#include "lib/hook/replace.hpp"
+#include "lib/hook/trampoline.hpp"

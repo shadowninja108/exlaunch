@@ -30,8 +30,8 @@
 #include <cstring>
 #include <stdlib.h>
 
-#include "nx_hook.hpp"
 #include "util/sys/jit.hpp"
+#include "inline_impl.hpp"
 
 
 #define __attribute __attribute__
@@ -521,153 +521,107 @@ namespace exl::hook::nx64 {
         }
     }
 
-//-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
 
-//static nn::os::MutexType hookMutex;
+    //static nn::os::MutexType hookMutex;
 
-//-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
 
-void Initialize() {
-    exl::util::jit::Initialize();
+    JIT_CREATE(s_HookJit, setting::JitSize);
 
-    /* TODO: inline hooks */
-    /*static u8 _inlhk_rw[InlineHookPoolSize];
-    rc = jitCreate(&__inlhk_jit, &_inlhk_rw, InlineHookPoolSize);
-    R_ABORT_UNLESS(rc);*/
-}
+    void Initialize() {
+       s_HookJit.Initialize();
+       InitializeInline();
+    }
 
-//-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
 
-Result AllocForTrampoline(uint32_t** rx, uint32_t** rw) {
-    static_assert((TrampolineSize * sizeof(uint32_t)) % 8 == 0, "8-byte align");
-    static volatile s32 index = -1;
+    static Result AllocForTrampoline(uint32_t** rx, uint32_t** rw) {
+        static_assert((TrampolineSize * sizeof(uint32_t)) % 8 == 0, "8-byte align");
+        static volatile s32 index = -1;
 
-    uint32_t i = __atomic_increase(&index);
-    
-    if(i > HookMax)
-        return result::HookTrampolineAllocFail;
+        uint32_t i = __atomic_increase(&index);
+        
+        if(i > HookMax)
+            return result::HookTrampolineAllocFail;
 
-    HookPool* rwptr = (HookPool*)util::jit::GetRw();
-    HookPool* rxptr = (HookPool*)util::jit::GetRo();
-    *rw = (*rwptr)[i];
-    *rx = (*rxptr)[i];
+        HookPool* rwptr = (HookPool*)s_HookJit.GetRw();
+        HookPool* rxptr = (HookPool*)s_HookJit.GetRo();
+        *rw = (*rwptr)[i];
+        *rx = (*rxptr)[i];
 
-    return result::Success;
-}
+        return result::Success;
+    }
 
-//-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
 
-static bool HookFuncImpl(void* const symbol, void* const replace, void* const rxtr, void* const rwtr) {
-    static constexpr uint_fast64_t mask = 0x03ffffffu;  // 0b00000011111111111111111111111111
+    static bool HookFuncImpl(void* const symbol, void* const replace, void* const rxtr, void* const rwtr) {
+        static constexpr uint_fast64_t mask = 0x03ffffffu;  // 0b00000011111111111111111111111111
 
-    uint32_t *rxtrampoline = static_cast<uint32_t*>(rxtr), *rwtrampoline = static_cast<uint32_t*>(rwtr),
-             *original = static_cast<uint32_t*>(symbol);
+        uint32_t *rxtrampoline = static_cast<uint32_t*>(rxtr), *rwtrampoline = static_cast<uint32_t*>(rwtr),
+                *original = static_cast<uint32_t*>(symbol);
 
-    static_assert(MaxInstructions >= 5, "please fix MaxInstructions!");
-    auto pc_offset = static_cast<int64_t>(__intval(replace) - __intval(symbol)) >> 2;
-    if (llabs(pc_offset) >= (mask >> 1)) {
-        const exl::util::RwPages ctrl((uintptr_t)original, 5 * sizeof(uint32_t));
+        static_assert(MaxInstructions >= 5, "please fix MaxInstructions!");
+        auto pc_offset = static_cast<int64_t>(__intval(replace) - __intval(symbol)) >> 2;
+        if (llabs(pc_offset) >= (mask >> 1)) {
+            const util::RwPages ctrl((uintptr_t)original, 5 * sizeof(uint32_t));
 
-        int32_t count = (reinterpret_cast<uint64_t>(original + 2) & 7u) != 0u ? 5 : 4;
+            int32_t count = (reinterpret_cast<uint64_t>(original + 2) & 7u) != 0u ? 5 : 4;
 
-        original = (u32*)ctrl.GetRw();
+            original = (u32*)ctrl.GetRw();
 
-        if (rxtrampoline) {
-            if (TrampolineSize < count * 10u) {
-                return false;
+            if (rxtrampoline) {
+                if (TrampolineSize < count * 10u) {
+                    return false;
+                }  // if
+                __fix_instructions(original, (u32*)ctrl.GetRo(), count, rwtrampoline, rxtrampoline);
             }  // if
-            __fix_instructions(original, (u32*)ctrl.GetRo(), count, rwtrampoline, rxtrampoline);
+
+            if (count == 5) {
+                original[0] = Aarch64Nop;
+                ++original;
+            }                           // if
+            original[0] = 0x58000051u;  // LDR X17, #0x8
+            original[1] = 0xd61f0220u;  // BR X17
+            *reinterpret_cast<int64_t*>(original + 2) = __intval(replace);
+            __flush_cache(symbol, 5 * sizeof(uint32_t));
+        } else {
+            const util::RwPages ctrl((uintptr_t)original, 1 * sizeof(uint32_t));
+
+            original = (u32*)ctrl.GetRw();
+
+            if (rwtrampoline) {
+                if (TrampolineSize < 1u * 10u) {
+                    return false;
+                }  // if
+                __fix_instructions(original, (u32*)ctrl.GetRo(), 1, rwtrampoline, rxtrampoline);
+            }  // if
+
+            __sync_cmpswap(original, *original, 0x14000000u | (pc_offset & mask));  // "B" ADDR_PCREL26
+            __flush_cache(symbol, 1 * sizeof(uint32_t));
         }  // if
 
-        if (count == 5) {
-            original[0] = Aarch64Nop;
-            ++original;
-        }                           // if
-        original[0] = 0x58000051u;  // LDR X17, #0x8
-        original[1] = 0xd61f0220u;  // BR X17
-        *reinterpret_cast<int64_t*>(original + 2) = __intval(replace);
-        __flush_cache(symbol, 5 * sizeof(uint32_t));
-    } else {
-        const exl::util::RwPages ctrl((uintptr_t)original, 1 * sizeof(uint32_t));
+        return true;
+    }
 
-        original = (u32*)ctrl.GetRw();
+    uintptr_t Hook(uintptr_t hook, uintptr_t callback, bool do_trampoline) {
+        
+        EXL_ASSERT(hook != 0);
+        EXL_ASSERT(callback != 0);
 
-        if (rwtrampoline) {
-            if (TrampolineSize < 1u * 10u) {
-                return false;
-            }  // if
-            __fix_instructions(original, (u32*)ctrl.GetRo(), 1, rwtrampoline, rxtrampoline);
-        }  // if
+        /* TODO: thread safety */
 
-        __sync_cmpswap(original, *original, 0x14000000u | (pc_offset & mask));  // "B" ADDR_PCREL26
-        __flush_cache(symbol, 1 * sizeof(uint32_t));
-    }  // if
+        u32* rxtrampoline = NULL;
+        u32* rwtrampoline = NULL;
+        if (do_trampoline) 
+            R_ABORT_UNLESS(AllocForTrampoline(&rxtrampoline, &rwtrampoline));
 
-    return true;
-}
+        if (!HookFuncImpl(reinterpret_cast<void*>(hook), reinterpret_cast<void*>(callback), rxtrampoline, rwtrampoline))
+            EXL_ABORT(exl::result::HookFailed);
 
-uintptr_t HookFuncCommon(uintptr_t hook, uintptr_t callback, bool do_trampoline) {
-    
-    EXL_ASSERT(hook != 0);
-    EXL_ASSERT(callback != 0);
+        s_HookJit.Flush();
 
-    /* TODO: thread safety */
-
-    u32* rxtrampoline = NULL;
-    u32* rwtrampoline = NULL;
-    if (do_trampoline) 
-        R_ABORT_UNLESS(AllocForTrampoline(&rxtrampoline, &rwtrampoline));
-
-    if (!HookFuncImpl(reinterpret_cast<void*>(hook), reinterpret_cast<void*>(callback), rxtrampoline, rwtrampoline))
-        EXL_ABORT(exl::result::HookFailed);
-
-    util::jit::Flush();
-
-    return (uintptr_t) rxtrampoline;
-}
-
-//-------------------------------------------------------------------------
-
-/*u64 inline_hook_curridx = 0;
-
-extern "C" void A64InlineHook(void* const symbol, void* const replace) {
-    u64 start = (u64)&InlineHandlerStart;
-    u64 end = (u64)&InlineHandlerEnd;
-
-    // make sure inline hook handler constexpr is correct
-    if(InlineHookHandlerSize != end - start)
-        R_ABORT_UNLESS(-1);
-
-    // prepare to copy handler
-    jitTransitionToWritable(&__inlhk_jit);
-    InlineHookEntry* rw_start = (InlineHookEntry*)__inlhk_jit.rw_addr;
-    InlineHookEntry* rw = rw_start + inline_hook_curridx;
-
-    // copy handler
-    memcpy(rw->handler, (void*)start, InlineHookHandlerSize);
-
-    // prepare to hook
-    jitTransitionToExecutable(&__inlhk_jit);
-    InlineHookEntry* rx_start = (InlineHookEntry*)__inlhk_jit.rx_addr;
-    InlineHookEntry* rx = rx_start + inline_hook_curridx;
-
-    // hook to call the handler
-    void* trampoline;
-    A64HookFunction(symbol, rx->handler, &trampoline);
-
-    // write trampoline/callback to entry
-    jitTransitionToWritable(&__inlhk_jit);
-    rw->callback = replace;
-    rw->m_Trampoline = trampoline;
-
-    // finalize, make handler executable
-    jitTransitionToExecutable(&__inlhk_jit);
-
-    inline_hook_curridx++;
-
-    //if(inline_hook_curridx > InlineHookMax)
-        //skyline::logger::s_Instance->LogFormat("[A64InlineHook] inline hook pool exausted!");
-}
-*/
+        return (uintptr_t) rxtrampoline;
+    }
 
 };

@@ -14,8 +14,6 @@ extern "C" {
 #include "kernel/svc.h"
 #include "kernel/virtmem.h"
 
-#include "runtime/env.h"
-
 #ifdef __cplusplus
 }
 #endif

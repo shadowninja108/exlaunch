@@ -72,6 +72,12 @@ namespace exl::util {
         EXL_ASSERT(memcmp((void*)claim.m_Ro, (void*)claim.m_Rw, size) == 0);
     }
 
+    void RwPages::Flush() {
+        const auto& claim = GetClaim();
+        armDCacheFlush((void*)claim.GetAlignedRw(), claim.GetAlignedSize());
+        armICacheInvalidate((void*)claim.GetAlignedRw(), claim.GetAlignedSize());
+    }
+
     RwPages::~RwPages() {
         /* Only unclaim if this is the owner. */
         if(!m_Owner) return;

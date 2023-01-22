@@ -33,4 +33,5 @@ namespace exl::armv8::inst::impl::opx1x0 {
     };
 }
 
-#include "ldr_register.hpp"
+#include "ldr_register_offset.hpp"
+#include "str_register_offset.hpp"

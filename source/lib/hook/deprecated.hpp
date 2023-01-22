@@ -27,6 +27,6 @@
     static _MAKE_HOOK_T_IMPL(ret, name, args, body)
     
 #define INJECT_HOOK(offset, name)   \
-    exl::hook::HookFunc(offset, _HOOK_NAME(name));
+    exl::hook::Hook(offset, _HOOK_NAME(name));
 #define INJECT_HOOK_T(offset, name) \
-    _HOOK_IMPL_NAME(name) = exl::hook::HookFunc(offset, _HOOK_NAME(name), true);
+    _HOOK_IMPL_NAME(name) = exl::hook::Hook(offset, _HOOK_NAME(name), true);

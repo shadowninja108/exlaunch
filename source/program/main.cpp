@@ -21,7 +21,6 @@ namespace nn::oe {
 
 extern "C" void exl_main(void* x0, void* x1) {
     /* Setup hooking enviroment. */
-    envSetOwnProcessHandle(exl::util::proc_handle::Get());
     exl::hook::Initialize();
 
     /* Install the hook at the provided function pointer. Function type is checked against the callback function. */

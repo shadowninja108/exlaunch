@@ -1,6 +1,6 @@
 #pragma once
 
-#include "base_hook.hpp"
+#include "base.hpp"
 #include "util/func_ptrs.hpp"
 #include <functional>
 
@@ -34,7 +34,7 @@ namespace exl::hook::impl {
         static ALWAYS_INLINE void InstallAtOffset(ptrdiff_t address) {
             _HOOK_STATIC_CALLBACK_ASSERT();
 
-            OrigRef() = nx64::HookFuncRaw<CallbackFuncPtr<>>(util::modules::GetTargetStart() + address, Derived::Callback, true);
+            OrigRef() = hook::Hook(util::modules::GetTargetStart() + address, Derived::Callback, true);
         }
 
         template<typename R, typename ...A>
@@ -44,13 +44,13 @@ namespace exl::hook::impl {
 
             static_assert(std::is_same_v<ArgFuncPtr, CallbackFuncPtr<>>, "Argument pointer type must match callback type!");
 
-            OrigRef() = nx64::HookFuncRaw<ArgFuncPtr>(ptr, Derived::Callback, true);
+            OrigRef() = hook::Hook(ptr, Derived::Callback, true);
         }
 
         static ALWAYS_INLINE void InstallAtPtr(uintptr_t ptr) {
             _HOOK_STATIC_CALLBACK_ASSERT();
             
-            OrigRef() = nx64::HookFuncRaw<CallbackFuncPtr<>>(ptr, Derived::Callback, true);
+            OrigRef() = hook::Hook(ptr, Derived::Callback, true);
         }
     };
 

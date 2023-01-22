@@ -4,7 +4,7 @@
 
 namespace exl::armv8::inst {
 
-    struct LdrRegister : public impl::opx1x0::LoadStoreRegisterOffset {
+    struct LdrRegisterOffset : public impl::opx1x0::LoadStoreRegisterOffset {
 
         static constexpr u8 V = 0b0;
         static constexpr u8 Opc = 0b01;
@@ -16,6 +16,7 @@ namespace exl::armv8::inst {
             return 0b10 | rt.Is64();
         }
 
+        /* TODO: merge */
         static constexpr u8 CreateOption(ExtendType extend) {
             switch(extend) {
                 case ExtendType_UXTW:
@@ -46,7 +47,7 @@ namespace exl::armv8::inst {
             return false;
         }
 
-        constexpr LdrRegister(reg::Register rt, reg::Register rn, reg::Register rm, ExtendType extend = ExtendType_LSL, u8 amount = 0) : LoadStoreRegisterOffset(GetSize(rt), V, Opc){
+        constexpr LdrRegisterOffset(reg::Register rt, reg::Register rn, reg::Register rm, ExtendType extend = ExtendType_LSL, u8 amount = 0) : LoadStoreRegisterOffset(GetSize(rt), V, Opc){
             /*
             static_assert(rt.Is64() == rm.Is64(), "");
             static_assert(extend & 0b010 != 0, "");
@@ -67,18 +68,18 @@ namespace exl::armv8::inst {
             SetRn(rn.Index());
         }
 
-        constexpr LdrRegister(reg::Register rt, reg::Register rn, reg::Register rm, u8 amount) : LdrRegister(rt, rn, rm, ExtendType_LSL, amount) {}
+        constexpr LdrRegisterOffset(reg::Register rt, reg::Register rn, reg::Register rm, u8 amount) : LdrRegisterOffset(rt, rn, rm, ExtendType_LSL, amount) {}
     };
 
-    static_assert(LdrRegister(reg::X0, reg::X1, reg::X2).Value()        == 0xF8626820, "");
-    static_assert(LdrRegister(reg::X3, reg::X4, reg::X5).Value()        == 0xF8656883, "");
-    static_assert(LdrRegister(reg::X6, reg::X7, reg::X8).Value()        == 0xF86868E6, "");
+    static_assert(LdrRegisterOffset(reg::X0, reg::X1, reg::X2).Value()                      == 0xF8626820, "");
+    static_assert(LdrRegisterOffset(reg::X3, reg::X4, reg::X5).Value()                      == 0xF8656883, "");
+    static_assert(LdrRegisterOffset(reg::X6, reg::X7, reg::X8).Value()                      == 0xF86868E6, "");
 
-    static_assert(LdrRegister(reg::X0, reg::X1, reg::W2, ExtendType_UXTW, 3).Value()        == 0xF8625820, "");
-    static_assert(LdrRegister(reg::X3, reg::X4, reg::W5, ExtendType_UXTW, 3).Value()        == 0xF8655883, "");
-    static_assert(LdrRegister(reg::X6, reg::X7, reg::W8, ExtendType_UXTW, 3).Value()        == 0xF86858E6, "");
+    static_assert(LdrRegisterOffset(reg::X0, reg::X1, reg::W2, ExtendType_UXTW, 3).Value()  == 0xF8625820, "");
+    static_assert(LdrRegisterOffset(reg::X3, reg::X4, reg::W5, ExtendType_UXTW, 3).Value()  == 0xF8655883, "");
+    static_assert(LdrRegisterOffset(reg::X6, reg::X7, reg::W8, ExtendType_UXTW, 3).Value()  == 0xF86858E6, "");
 
-    static_assert(LdrRegister(reg::X0, reg::X1, reg::X2, ExtendType_SXTX, 3).Value()        == 0xF862F820, "");
-    static_assert(LdrRegister(reg::X3, reg::X4, reg::X5, ExtendType_SXTX, 3).Value()        == 0xF865F883, "");
-    static_assert(LdrRegister(reg::X6, reg::X7, reg::X8, ExtendType_SXTX, 3).Value()        == 0xF868F8E6, "");
+    static_assert(LdrRegisterOffset(reg::X0, reg::X1, reg::X2, ExtendType_SXTX, 3).Value()  == 0xF862F820, "");
+    static_assert(LdrRegisterOffset(reg::X3, reg::X4, reg::X5, ExtendType_SXTX, 3).Value()  == 0xF865F883, "");
+    static_assert(LdrRegisterOffset(reg::X6, reg::X7, reg::X8, ExtendType_SXTX, 3).Value()  == 0xF868F8E6, "");
 }
