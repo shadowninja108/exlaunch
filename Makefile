@@ -39,3 +39,4 @@ export
 
 include $(MK_PATH)/$(MK_NAME)
 include $(MK_PATH)/common.mk
+include $(MK_PATH)/deploy.mk
