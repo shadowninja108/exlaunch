@@ -15,6 +15,9 @@ ELF_EXTRACT :=
 # Python command to use. Must be Python 3.4+.
 PYTHON := python3
 
+# JSON to use to make .npdm
+NPDM_JSON := qlaunch.json
+
 # Additional C/C++ flags to use.
 C_FLAGS := 
 CXX_FLAGS := 

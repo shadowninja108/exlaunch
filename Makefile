@@ -4,6 +4,7 @@ MISC_PATH := $(PWD)/misc
 MK_PATH := $(MISC_PATH)/mk
 SCRIPTS_PATH := $(MISC_PATH)/scripts
 SPECS_PATH := $(MISC_PATH)/specs
+NPDM_JSON_PATH := $(MISC_PATH)/npdm-json
 
 # Define common variables.
 NAME := $(shell basename $(PWD))
@@ -40,3 +41,4 @@ export
 include $(MK_PATH)/$(MK_NAME)
 include $(MK_PATH)/common.mk
 include $(MK_PATH)/deploy.mk
+include $(MK_PATH)/npdm.mk
