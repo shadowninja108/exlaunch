@@ -1,62 +1,56 @@
+#!/usr/bin/env python3
+
 import ftplib
 import os
-from ftplib import FTP
-from os import environ
-from os import path
-import pathlib
+from types import NoneType
+from typing import Any, Dict, Self, Tuple
 
-def get_and_assert_nonempty_var(name):
-    val = environ.get(name)
-    if val:
-        return val
-    print(f"{name} is empty!")
-    exit()
+# https://ftputil.sschwarzer.net
+import ftputil
 
-console_ip =        get_and_assert_nonempty_var("FTP_IP")
-console_port =      get_and_assert_nonempty_var("FTP_PORT")
-console_username =  get_and_assert_nonempty_var("FTP_USERNAME")
-sd_out =            get_and_assert_nonempty_var("SD_OUT")
-local_out =         get_and_assert_nonempty_var("OUT")
+FTP_IP: str = os.getenv('FTP_IP', '192.168.0.235')
+FTP_PORT: int = int(os.getenv('FTP_PORT', '5000'))
 
-# Password may be empty.
-console_password =  environ["FTP_PASSWORD"]
+FTP_USERNAME: str = os.getenv('FTP_USERNAME', 'anonymous')
+FTP_PASSWORD: str = os.getenv('FTP_PASSWORD', '')
+
+PROGRAM_ID: str = os.getenv('PROGRAM_ID', '0100801011c3e000')
+
+OUT: str = os.getenv('OUT', os.path.abspath('deploy'))
+SD_OUT: str = os.getenv('SD_OUT', f'atmosphere/contents/{PROGRAM_ID}/exefs')
 
 
-with FTP() as ftp:
-    # Login/connect to console
-    ftp.connect(console_ip, int(console_port))
-    ftp.login(console_username, console_password)
-
-    # I don't feel comfortable doing this...
-    # ftp.rmd(sd_out)
-
-    # Make SD out directory recursively.
-    pl_sd_out = pathlib.PurePosixPath(sd_out)
-    for i in range(len(pl_sd_out.parents)-2, -1, -1):
-        d = pl_sd_out.parents[i]
+class SessionFactory(FTP):
+    
+    def __init__(self: Self, ftp_ip: str = '192.168.0.235', ftp_port: int = 5000, ftp_username: str = 'anonymous', ftp_password: str = '', *args: Tuple[Any], **kwargs: Dict[str, Any]) -> NoneType:
+        super().__init__()
+        
         try:
-            ftp.mkd(str(d))
-        except ftplib.error_perm as e:
-            # probably a "File exists" error
+            self.connect(ftp_ip, ftp_port)
+        except ftputil.error.FTPOSError:
+            raise
+        else:
+            try:
+                self.login(ftp_username, ftp_password)
+            except ftputil.error.FTPOSError:
+                raise
+            else:
+                pass
+            finally:
+                pass
+        finally:
             pass
 
-    try:
-        ftp.mkd(str(pl_sd_out))
-    except ftplib.error_perm as e:
-        # probably a "File exists" error
-        pass
-    
-    # Move to created directory
-    ftp.cwd(str(pl_sd_out))
 
-    for local_filename in os.listdir(local_out):
-        # Get absolute path for the source file.
-        local_filepath  = path.join(local_out, local_filename)
-        
-        # Only copy files.
-        if path.isdir(local_filepath):
-            continue
+def main(*args: Tuple[Any], **kwargs: Dict[str, Any]) -> NoneType:
+    with FTPHost(FTP_IP, FTP_PORT, FTP_USERNAME, FTP_PASSWORD, session_factory=SessionFactory) as ftp_host:
+        ftp_host.makedirs(SD_OUT, exist_ok=True)
+        # ftp_host.upload(os.path.join(OUT, 'main'), os.path.join(SD_OUT, 'main'))
+        # ftp_host.upload(os.path.join(OUT, 'subsdk9'), os.path.join(SD_OUT, 'subsdk9'))
+        for name in os.listdir(OUT):
+            if os.path.isfile(os.path.join(OUT, name)):
+                ftp_host.upload(os.path.join(OUT, name), os.path.join(SD_OUT, name))
 
-        # Upload file.
-        with open(local_filepath, "rb") as f:
-            ftp.storbinary(f"STOR {local_filename}", f)
+
+if __name__ == '__main__':
+    main()
