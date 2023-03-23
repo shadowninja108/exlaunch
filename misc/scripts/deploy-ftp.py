@@ -8,21 +8,21 @@ from typing import Any, Dict, Self, Tuple
 # https://ftputil.sschwarzer.net
 import ftputil
 
+PROGRAM_ID: str = os.getenv('PROGRAM_ID', '0100801011c3e000')
+
 FTP_IP: str = os.getenv('FTP_IP', '192.168.0.235')
 FTP_PORT: int = int(os.getenv('FTP_PORT', '5000'))
-
 FTP_USERNAME: str = os.getenv('FTP_USERNAME', 'anonymous')
 FTP_PASSWORD: str = os.getenv('FTP_PASSWORD', '')
-
-PROGRAM_ID: str = os.getenv('PROGRAM_ID', '0100801011c3e000')
 
 OUT: str = os.getenv('OUT', os.path.abspath('deploy'))
 SD_OUT: str = os.getenv('SD_OUT', f'atmosphere/contents/{PROGRAM_ID}/exefs')
 
 
-class SessionFactory(FTP):
+class SessionFactory(ftplib.FTP):
     
-    def __init__(self: Self, ftp_ip: str = '192.168.0.235', ftp_port: int = 5000, ftp_username: str = 'anonymous', ftp_password: str = '', *args: Tuple[Any], **kwargs: Dict[str, Any]) -> NoneType:
+    def __init__(self: Self, ftp_ip: str = '192.168.0.235', ftp_port: int = 5000, ftp_username: str = 'anonymous',
+                 ftp_password: str = '', *args: Tuple[Any], **kwargs: Dict[str, Any]) -> NoneType:
         super().__init__()
         
         try:
@@ -43,7 +43,7 @@ class SessionFactory(FTP):
 
 
 def main(*args: Tuple[Any], **kwargs: Dict[str, Any]) -> NoneType:
-    with FTPHost(FTP_IP, FTP_PORT, FTP_USERNAME, FTP_PASSWORD, session_factory=SessionFactory) as ftp_host:
+    with ftputil.FTPHost(FTP_IP, FTP_PORT, FTP_USERNAME, FTP_PASSWORD, session_factory=SessionFactory) as ftp_host:
         ftp_host.makedirs(SD_OUT, exist_ok=True)
         # ftp_host.upload(os.path.join(OUT, 'main'), os.path.join(SD_OUT, 'main'))
         # ftp_host.upload(os.path.join(OUT, 'subsdk9'), os.path.join(SD_OUT, 'subsdk9'))
