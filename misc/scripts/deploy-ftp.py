@@ -45,11 +45,11 @@ class SessionFactory(ftplib.FTP):
 def main(*args: Tuple[Any], **kwargs: Dict[str, Any]) -> NoneType:
     with ftputil.FTPHost(FTP_IP, FTP_PORT, FTP_USERNAME, FTP_PASSWORD, session_factory=SessionFactory) as ftp_host:
         ftp_host.makedirs(SD_OUT, exist_ok=True)
-        # ftp_host.upload(os.path.join(OUT, 'main'), os.path.join(SD_OUT, 'main'))
-        # ftp_host.upload(os.path.join(OUT, 'subsdk9'), os.path.join(SD_OUT, 'subsdk9'))
+        # ftp_host.upload(os.path.join(OUT, 'main'), ftp_host.path.join(SD_OUT, 'main'))
+        # ftp_host.upload(os.path.join(OUT, 'subsdk9'), ftp_host.path.join(SD_OUT, 'subsdk9'))
         for name in os.listdir(OUT):
             if os.path.isfile(os.path.join(OUT, name)):
-                ftp_host.upload(os.path.join(OUT, name), os.path.join(SD_OUT, name))
+                ftp_host.upload(os.path.join(OUT, name), ftp_host.path.join(SD_OUT, name))
 
 
 if __name__ == '__main__':
