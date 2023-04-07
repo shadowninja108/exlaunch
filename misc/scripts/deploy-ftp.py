@@ -59,7 +59,7 @@ class SessionFactory(ftplib.FTP):
 def main(*args: Tuple[Any], **kwargs: Dict[str, Any]) -> NoneType:
     with ftputil.FTPHost(FTP_IP, FTP_PORT, FTP_USERNAME, FTP_PASSWORD, session_factory=SessionFactory) as ftp_host:
         ftp_host.makedirs(SD_OUT, exist_ok=True)  # make SD_OUT
-        ftp_host.upload(os.path.join(OUT, 'main'), ftp_host.path.join(SD_OUT, 'main.npdm'))  # upload main.npdm
+        ftp_host.upload(os.path.join(OUT, 'main.npdm'), ftp_host.path.join(SD_OUT, 'main.npdm'))  # upload main.npdm
         ftp_host.upload(os.path.join(OUT, 'subsdk9'), ftp_host.path.join(SD_OUT, 'subsdk9'))  # upload subsdk9
 
 
