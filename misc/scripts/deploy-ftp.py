@@ -15,11 +15,10 @@ def getenv(key: str, default: Optional[str] = None, *args: Tuple[Any], **kwargs:
     value: Union[None, str] = os.getenv(key)
     if value is not None:
         return value
+    elif default is not None:
+        return default
     else:
-        if default is not None:
-            return default
-        else:
-            raise KeyError
+        raise KeyError
 
 
 PROGRAM_ID: str = getenv('PROGRAM_ID')
