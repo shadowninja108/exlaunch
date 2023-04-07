@@ -24,9 +24,8 @@ def getenv(key: str, default: Optional[str] = None, *args: Tuple[Any], **kwargs:
         raise KeyError(f'Missing enviroment variable {key}! Only run this script via make deploy-ftp.')
 
 
-PROGRAM_ID: str = getenv('PROGRAM_ID')
-
 # Get enviroment variables from build system.
+PROGRAM_ID: str = getenv('PROGRAM_ID')
 FTP_IP: str = getenv('FTP_IP')
 FTP_PORT: int = int(getenv('FTP_PORT'))
 FTP_USERNAME: str = getenv('FTP_USERNAME')
