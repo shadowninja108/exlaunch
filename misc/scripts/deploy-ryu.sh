@@ -2,7 +2,7 @@
 set -e
 
 # Verify the path is set.
-if [[ -z "${RYU_PATH}" ]]; then
+if [ -z "${RYU_PATH}" ]; then
     echo "RYU_PATH appears to not be set! Check your exlaunch.sh?"
 fi
 
