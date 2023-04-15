@@ -8,6 +8,9 @@
 
 namespace exl::hook::nx64 {
 
+    /* Size of stack to reserve for the context. Adjust this along with CTX_STACK_SIZE in inline_asm.s */
+    static constexpr int CtxStackSize = 0x100;
+
     namespace reg = exl::armv8::reg;
     namespace inst = exl::armv8::inst;
 
@@ -55,16 +58,18 @@ namespace exl::hook::nx64 {
         uintptr_t entryCb = reinterpret_cast<uintptr_t>(&entryRx->m_CbEntry);
         /* Hook to call into the entry's entrypoint. Assign trampoline to be used by impl. */
         auto trampoline = Hook(hook, entryCb, true);
+        /* Offset of LR before SP is moved. */
+        static constexpr int lrBackupOffset = int(offsetof(InlineCtx, m_Gpr.m_Lr)) - CtxStackSize;
 
         /* Construct entrypoint instructions. */
         auto impl = GetImpl();
         entryRw->m_CbEntry = {
             /* Backup LR register to stack, as we are about to trash it. */
-            inst::SturUnscaledImmediate(reg::LR, reg::SP, -0x10),
+            inst::SturUnscaledImmediate(reg::LR, reg::SP, lrBackupOffset),
             /* Branch to implementation. */
             inst::BranchLink(impl - (entryCb + 4)),
             /* Restore proper LR. */
-            inst::LdurUnscaledImmediate(reg::LR, reg::SP, -0x10),
+            inst::LdurUnscaledImmediate(reg::LR, reg::SP, lrBackupOffset),
             /* Branch to trampoline. */
             inst::Branch(trampoline - (entryCb + 8))
         };

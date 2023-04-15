@@ -11,9 +11,12 @@
 	.cfi_endproc
 .endm
 
+/* Size of stack to reserve for the context. Adjust this along with CtxStackSize in inline_impl.cpp */
+.set CTX_STACK_SIZE, 0x100
+
 /* For these macros, LR is deliberately not backed up as that's handled by the entry's entrypoint. */
 .macro armBackupRegisters
-    sub sp, sp, #0x100
+    sub sp, sp, CTX_STACK_SIZE
     stp x0, x1, [sp, #0x00]
     stp x2, x3, [sp, #0x10]
     stp x4, x5, [sp, #0x20]
@@ -47,7 +50,7 @@
     ldp x24, x25, [sp, #0xC0]
     ldp x26, x27, [sp, #0xD0]
     ldp x28, x29, [sp, #0xE0]
-    add sp, sp, #0x100
+    add sp, sp, CTX_STACK_SIZE
 .endm
 
 CODE_BEGIN exl_inline_hook_impl
