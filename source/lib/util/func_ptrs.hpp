@@ -51,7 +51,7 @@ namespace exl::util {
             }
 
             template<typename... Args>
-            ALWAYS_INLINE decltype(auto) Call(T* _this, Args &&... args) const {
+            ALWAYS_INLINE auto Call(T* _this, Args &&... args) const {
                 return GetPtr(_this)(_this, std::forward<Args>(args)...);
             }
         };
