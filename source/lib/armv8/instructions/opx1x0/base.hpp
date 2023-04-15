@@ -18,6 +18,7 @@ namespace exl::armv8::inst::impl {
     };
 }
 
+#include "load_register_literal/base.hpp"
 #include "load_store_register_offset/base.hpp"
 #include "load_store_register_unscaled_immediate/base.hpp"
 #include "load_store_register_unsigned_immediate/base.hpp"
