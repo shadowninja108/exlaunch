@@ -6,13 +6,14 @@ SCRIPTS_PATH := $(MISC_PATH)/scripts
 SPECS_PATH := $(MISC_PATH)/specs
 NPDM_JSON_PATH := $(MISC_PATH)/npdm-json
 
+# To configure exlaunch, edit config.mk.
+include $(PWD)/config.mk
+
 # Define common variables.
 NAME := $(shell basename $(PWD))
 OUT := $(PWD)/deploy
 SD_OUT := atmosphere/contents/$(PROGRAM_ID)/exefs
 
-# To configure exlaunch, edit config.mk.
-include $(PWD)/config.mk
 
 # Set load kind specific variables.
 ifeq ($(LOAD_KIND), Module)
