@@ -41,23 +41,10 @@ class SessionFactory(ftplib.FTP):
     def __init__(self: Self, ftp_ip: str, ftp_port: int, ftp_username: str, ftp_password: str, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> NoneType:
         super().__init__()
         
-        try:
-            # Connect to FTP server.
-            self.connect(ftp_ip, ftp_port)
-        except ftputil.error.FTPOSError:
-            raise
-        else:
-            try:
-                # Login with credentials.
-                self.login(ftp_username, ftp_password)
-            except ftputil.error.FTPOSError:
-                raise
-            else:
-                pass
-            finally:
-                pass  # TODO
-        finally:
-            pass  # TODO
+        # Connect to FTP server.
+        self.connect(ftp_ip, ftp_port)
+        # Login with credentials.
+        self.login(ftp_username, ftp_password)
 
 
 def main(*args: Tuple[Any], **kwargs: Dict[str, Any]) -> NoneType:
