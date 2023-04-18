@@ -1,62 +1,67 @@
+#!/usr/bin/env python3
+
 import ftplib
 import os
-from ftplib import FTP
-from os import environ
-from os import path
-import pathlib
+from types import NoneType
+from typing import Any, Dict, Optional, Self, Tuple, Union
 
-def get_and_assert_nonempty_var(name):
-    val = environ.get(name)
-    if val:
-        return val
-    print(f"{name} is empty!")
-    exit()
+# https://ftputil.sschwarzer.net
+import ftputil
 
-console_ip =        get_and_assert_nonempty_var("FTP_IP")
-console_port =      get_and_assert_nonempty_var("FTP_PORT")
-console_username =  get_and_assert_nonempty_var("FTP_USERNAME")
-sd_out =            get_and_assert_nonempty_var("SD_OUT")
-local_out =         get_and_assert_nonempty_var("OUT")
-
-# Password may be empty.
-console_password =  environ["FTP_PASSWORD"]
-
-
-with FTP() as ftp:
-    # Login/connect to console
-    ftp.connect(console_ip, int(console_port))
-    ftp.login(console_username, console_password)
-
-    # I don't feel comfortable doing this...
-    # ftp.rmd(sd_out)
-
-    # Make SD out directory recursively.
-    pl_sd_out = pathlib.PurePosixPath(sd_out)
-    for i in range(len(pl_sd_out.parents)-2, -1, -1):
-        d = pl_sd_out.parents[i]
-        try:
-            ftp.mkd(str(d))
-        except ftplib.error_perm as e:
-            # probably a "File exists" error
-            pass
-
-    try:
-        ftp.mkd(str(pl_sd_out))
-    except ftplib.error_perm as e:
-        # probably a "File exists" error
-        pass
+# Wrapper to assert the enviroment variable exists.
+def getenv(key: str, default: Optional[str] = None, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> str:
+    '''Wrapper for os.getenv.'''
     
-    # Move to created directory
-    ftp.cwd(str(pl_sd_out))
+    value: Union[None, str] = os.getenv(key)
+    # Use the value if it exists.
+    if value is not None:
+        return value
+    # If we're provided a default, fallback to that.
+    elif default is not None:
+        return default
+    # Assert key is missing.
+    else:
+        raise KeyError(f'Missing enviroment variable {key}! Only run this script via make deploy-ftp.')
 
-    for local_filename in os.listdir(local_out):
-        # Get absolute path for the source file.
-        local_filepath  = path.join(local_out, local_filename)
+
+# Get enviroment variables from build system.
+PROGRAM_ID: str = getenv('PROGRAM_ID')
+FTP_IP: str = getenv('FTP_IP')
+FTP_PORT: int = int(getenv('FTP_PORT'))
+FTP_USERNAME: str = getenv('FTP_USERNAME')
+OUT: str = getenv('OUT')
+SD_OUT: str = getenv('SD_OUT')
+# Password may be empty, so special case this.
+FTP_PASSWORD: str = getenv('FTP_PASSWORD', '')
+
+
+class SessionFactory(ftplib.FTP):
+    '''Session factory for FTPHost.'''
+    
+    def __init__(self: Self, ftp_ip: str, ftp_port: int, ftp_username: str, ftp_password: str, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> NoneType:
+        super().__init__()
         
-        # Only copy files.
-        if path.isdir(local_filepath):
-            continue
+        # Connect to FTP server.
+        self.connect(ftp_ip, ftp_port)
+        # Login with credentials.
+        self.login(ftp_username, ftp_password)
 
-        # Upload file.
-        with open(local_filepath, "rb") as f:
-            ftp.storbinary(f"STOR {local_filename}", f)
+
+def main(*args: Tuple[Any], **kwargs: Dict[str, Any]) -> NoneType:
+    # Connect/login to console FTP server.
+    with ftputil.FTPHost(FTP_IP, FTP_PORT, FTP_USERNAME, FTP_PASSWORD, session_factory=SessionFactory) as ftp_host:
+        # Make output directory.
+        ftp_host.makedirs(SD_OUT, exist_ok=True)
+        
+        # Iterate every file in the deploy directory.
+        for name in os.listdir(OUT):
+            # Ignore directories, for now.
+            if not os.path.isfile(os.path.join(OUT, name)):
+                continue
+                
+            # Upload file to server.
+            ftp_host.upload(os.path.join(OUT, name), ftp_host.path.join(SD_OUT, name))
+
+
+if __name__ == '__main__':
+    main()
