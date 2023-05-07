@@ -60,6 +60,7 @@ namespace exl::hook::nx64 {
         auto trampoline = Hook(hook, entryCb, true);
         /* Offset of LR before SP is moved. */
         static constexpr int lrBackupOffset = int(offsetof(InlineCtx, m_Gpr.m_Lr)) - CtxStackSize;
+        static_assert(lrBackupOffset == -0x10, "InlineCtx is not ABI compatible.");
 
         /* Construct entrypoint instructions. */
         auto impl = GetImpl();
@@ -67,11 +68,11 @@ namespace exl::hook::nx64 {
             /* Backup LR register to stack, as we are about to trash it. */
             inst::SturUnscaledImmediate(reg::LR, reg::SP, lrBackupOffset),
             /* Branch to implementation. */
-            inst::BranchLink(impl - (entryCb + 4)),
+            inst::BranchLink(impl - (entryCb + (1 * sizeof(armv8::InstType)))),
             /* Restore proper LR. */
             inst::LdurUnscaledImmediate(reg::LR, reg::SP, lrBackupOffset),
             /* Branch to trampoline. */
-            inst::Branch(trampoline - (entryCb + 8))
+            inst::Branch(trampoline - (entryCb + (3 * sizeof(armv8::InstType))))
         };
         /* Assign callback to be called to be used by impl. */
         entryRw->m_Callback = callback;
