@@ -1,5 +1,5 @@
 # Define paths.
-PWD := $(shell pwd)
+PWD := $(shell echo "$(shell pwd)" | sed 's: :\\ :g')
 MISC_PATH := $(PWD)/misc
 MK_PATH := $(MISC_PATH)/mk
 SCRIPTS_PATH := $(MISC_PATH)/scripts
