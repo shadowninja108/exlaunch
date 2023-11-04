@@ -12,7 +12,7 @@ PHDRS
 
 SECTIONS
 {
-  PROVIDE(__start__ = 0x0);
+  PROVIDE_HIDDEN(__start__ = 0x0);
   . = __start__;
   __code_start__ = .;
 
@@ -112,25 +112,25 @@ SECTIONS
 
   .preinit_array ALIGN(8) :
   {
-    PROVIDE (__preinit_array_start = .);
+    PROVIDE_HIDDEN (__preinit_array_start = .);
     KEEP (*(.preinit_array))
-    PROVIDE (__preinit_array_end = .);
+    PROVIDE_HIDDEN (__preinit_array_end = .);
   } :data
 
   /* App init array */
   .init_array : {
-    PROVIDE (__init_array_start = .);
+    PROVIDE_HIDDEN (__init_array_start = .);
     KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*)))
     KEEP (*(.init_array))
-    PROVIDE (__init_array_end  = .);
+    PROVIDE_HIDDEN (__init_array_end  = .);
   } :data
 
   /* App fini array */
   .fini_array : {
-    PROVIDE (__fini_array_start__ = .);
+    PROVIDE_HIDDEN (__fini_array_start__ = .);
     KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*)))
     KEEP (*(.fini_array))
-    PROVIDE (__fini_array_end__ = .);
+    PROVIDE_HIDDEN (__fini_array_end__ = .);
   } :data
 
   /* Thread Local sections */
