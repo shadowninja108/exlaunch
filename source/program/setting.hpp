@@ -2,8 +2,13 @@
 
 #include "common.hpp"
 
-#define EXL_MODULE_NAME "exlaunch"
-#define EXL_MODULE_NAME_LEN 8
+#ifdef VERSION_SHIELD
+#define EXL_MODULE_NAME "exlaunch_shield"
+#define EXL_MODULE_NAME_LEN 15
+#else
+#define EXL_MODULE_NAME "exlaunch_sword"
+#define EXL_MODULE_NAME_LEN 14
+#endif
 
 #define EXL_DEBUG
 #define EXL_USE_FAKEHEAP

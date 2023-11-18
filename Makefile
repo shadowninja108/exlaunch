@@ -10,7 +10,7 @@ NPDM_JSON_PATH := $(MISC_PATH)/npdm-json
 include $(PWD)/config.mk
 
 # Define common variables.
-NAME := $(shell basename $(PWD))
+NAME := $(VERSION)
 OUT := $(PWD)/deploy
 SD_OUT := atmosphere/contents/$(PROGRAM_ID)/exefs
 
