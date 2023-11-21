@@ -30,10 +30,32 @@ else
     $(error LOAD_KIND is invalid, please check config.mk)
 endif
 
+ifeq ($(FAKEHEAP_SIZE),)
+    DEXL_FAKEHEAP := -DEXL_FAKEHEAP_SIZE=0x1000
+else
+    DEXL_FAKEHEAP := -DEXL_FAKEHEAP_SIZE=$(FAKEHEAP_SIZE) -DEXL_USE_FAKEHEAP
+endif
+
 .PHONY: clean all
 
 # Built internal C flags variable.
-EXL_CFLAGS   := $(C_FLAGS) -DEXL_LOAD_KIND=$(LOAD_KIND) -DEXL_LOAD_KIND_ENUM=$(LOAD_KIND_ENUM) -DEXL_PROGRAM_ID=0x$(PROGRAM_ID)
+EXL_CFLAGS   := $(C_FLAGS) \
+                $(DEXL_FAKEHEAP) \
+                -DEXL_LOAD_KIND=$(LOAD_KIND) \
+                -DEXL_LOAD_KIND_ENUM=$(LOAD_KIND_ENUM) \
+                -DEXL_PROGRAM_ID=0x$(PROGRAM_ID) \
+                -DEXL_MODULE_NAME=\"$(MODULE_NAME)\" \
+                -DEXL_JIT_SIZE=$(JIT_SIZE) \
+                -DEXL_INLINE_POOL_SIZE=$(INLINE_POOL_SIZE) \
+
+ifeq ($(DEBUG), 1)
+    EXL_CFLAGS := $(EXL_CFLAGS) -DEXL_DEBUG
+endif
+
+ifeq ($(SUPPORTS_REBOOTPAYLOAD), 1)
+    EXL_CFLAGS := $(EXL_CFLAGS) -DEXL_SUPPORTS_REBOOTPAYLOAD
+endif
+
 EXL_CXXFLAGS := $(CXX_FLAGS)
 
 # Export all of our variables to sub-makes and sub-processes.

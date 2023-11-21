@@ -9,6 +9,25 @@ LOAD_KIND := Module
 # Program you're targetting. Used to determine where to deploy your files.
 PROGRAM_ID := 0100801011c3e000
 
+# Name of the module
+MODULE_NAME := exlaunch
+
+# Size of the fake .bss heap.
+# Set to empty to disable fake heap
+FAKEHEAP_SIZE := 0x5000
+
+# JIT area for hooks
+JIT_SIZE := 0x1000
+
+# Inline pool size
+INLINE_POOL_SIZE := 0x1000
+
+# Enable debug (1=enable, other=disable)
+DEBUG := 1
+
+# Should support rebooting to payload on abort (1=enable, other=disable)
+SUPPORTS_REBOOTPAYLOAD :=
+
 # Optional path to copy the final ELF to, for convenience.
 ELF_EXTRACT :=
 

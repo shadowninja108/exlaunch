@@ -149,7 +149,7 @@ $(OUTPUT).nso	:	$(OUTPUT).elf $(OUTPUT).npdm
 
 $(OUTPUT).elf	:	$(OFILES)
 
-$(OFILES_SRC)	: $(HFILES_BIN)
+$(OFILES_SRC)	: $(HFILES_BIN) $(PWD)/config.mk
 
 #---------------------------------------------------------------------------------
 # you need a rule like this for each extension you use as binary data
