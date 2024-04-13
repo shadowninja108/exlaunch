@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# User configuration has moved to misc/mk/config.mk.
+# User configuration has moved to config.mk.
 
 # Make arguments.
 MAKE_ARGS="-j8 V=1"
