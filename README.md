@@ -1,8 +1,8 @@
 # exlaunch
 A framework for injecting C/C++ code into Nintendo Switch applications/applet/sysmodules.
 
-# Note
-This project is a work in progress. If you have issues, reach out to Shadów#1337 on Discord.
+> [!NOTE]
+> This project is a work in progress. If you have issues, reach out to `shad0w0.` on Discord.
 
 # Credit
 - Atmosphère: A great reference and guide.
