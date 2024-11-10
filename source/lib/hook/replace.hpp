@@ -2,6 +2,7 @@
 
 #include "base.hpp"
 #include "util/func_ptrs.hpp"
+#include "util/type_traits.hpp"
 
 #define HOOK_DEFINE_REPLACE(name)                        \
 struct name : public ::exl::hook::impl::ReplaceHook<name>
@@ -20,12 +21,12 @@ namespace exl::hook::impl {
             hook::Hook(util::modules::GetTargetStart() + address, Derived::Callback);
         }
 
-        template<typename R, typename ...A>
-        static ALWAYS_INLINE void InstallAtFuncPtr(util::GenericFuncPtr<R, A...> ptr) {
+        template<typename T>
+        static ALWAYS_INLINE void InstallAtFuncPtr(T ptr) {
             _HOOK_STATIC_CALLBACK_ASSERT();
 
-            using ArgFuncPtr = decltype(ptr);
-            static_assert(std::is_same_v<ArgFuncPtr, CallbackFuncPtr<>>, "Argument pointer type must match callback type!");
+            using Traits = util::FuncPtrTraits<T>;
+            static_assert(std::is_same_v<typename Traits::CPtr, CallbackFuncPtr<>>, "Argument pointer type must match callback type!");
 
             hook::Hook(ptr, Derived::Callback);
         }
@@ -36,5 +37,4 @@ namespace exl::hook::impl {
             hook::Hook(ptr, Derived::Callback);
         }
     };
-
 }

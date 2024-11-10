@@ -72,7 +72,7 @@ namespace exl::util {
         EXL_ASSERT(memcmp((void*)claim.m_Ro, (void*)claim.m_Rw, size) == 0);
     }
 
-    void RwPages::Flush() {
+    void RwPages::Flush() const {
         const auto& claim = GetClaim();
         armDCacheFlush((void*)claim.GetAlignedRw(), claim.GetAlignedSize());
         armICacheInvalidate((void*)claim.GetAlignedRw(), claim.GetAlignedSize());

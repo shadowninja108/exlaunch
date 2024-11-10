@@ -33,6 +33,8 @@
 #include "util/sys/jit.hpp"
 #include "inline_impl.hpp"
 
+#include <lib/log/logger_mgr.hpp>
+#include <program/loggers.hpp>
 
 #define __attribute __attribute__
 #define aligned(x) __aligned__(x)
@@ -416,8 +418,7 @@ namespace exl::hook::nx64 {
                         if (ref_idx > current_idx) {
                             // the bottom 12 bits of absolute_addr are masked out,
                             // so ref_idx must be less than or equal to current_idx!
-                            /*skyline::logger::s_Instance->Log(
-                                "[And64InlineHook] ref_idx must be less than or equal to current_idx!\n");*/
+                            Logging.Log(EXL_LOG_PREFIX "ref_idx must be less than or equal to current_idx!");
                         }  // if
 
                         // *absolute_addr may be changed due to relocation fixing
@@ -460,7 +461,7 @@ namespace exl::hook::nx64 {
             static_assert(sizeof(ctx.dat) / sizeof(ctx.dat[0]) == MaxInstructions, "please use MaxInstructions!");
         #ifndef NDEBUG
             if (count > MaxInstructions) {
-                EXL_ABORT(result::HookFixingTooManyInstructions);
+                R_ABORT_UNLESS(result::HookFixingTooManyInstructions);
             }   // if
         #endif  // NDEBUG
 
@@ -590,9 +591,8 @@ namespace exl::hook::nx64 {
     }
 
     uintptr_t Hook(uintptr_t hook, uintptr_t callback, bool do_trampoline) {
-        
-        EXL_ASSERT(hook != 0);
-        EXL_ASSERT(callback != 0);
+        EXL_ABORT_UNLESS(hook != 0);
+        EXL_ABORT_UNLESS(callback != 0);
 
         /* TODO: thread safety */
 
@@ -602,11 +602,11 @@ namespace exl::hook::nx64 {
             R_ABORT_UNLESS(AllocForTrampoline(&rxtrampoline, &rwtrampoline));
 
         if (!HookFuncImpl(reinterpret_cast<void*>(hook), reinterpret_cast<void*>(callback), rxtrampoline, rwtrampoline))
-            EXL_ABORT(exl::result::HookFailed);
+            R_ABORT_UNLESS(exl::result::HookFailed);
 
         s_HookJit.Flush();
 
-        return (uintptr_t) rxtrampoline;
+        return reinterpret_cast<uintptr_t>(rxtrampoline);
     }
 
 };

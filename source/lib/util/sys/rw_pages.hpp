@@ -88,7 +88,7 @@ namespace exl::util {
                 return *this;
             }
 
-            void Flush();
+            void Flush() const;
 
             inline const Claim& GetClaim() const { return m_Claim; }
 

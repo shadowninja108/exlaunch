@@ -32,6 +32,13 @@ namespace exl::armv8::inst {
         ExtendType_SXTX = 0b111, 
     };
 
+    enum ShiftValue : u8 {
+        ShiftValue_0 = 0b00,
+        ShiftValue_16 = 0b01,
+        /* Following only valid when using a 64-bit register. */
+        ShiftValue_32 = 0b10,
+        ShiftValue_48 = 0b11,
+    };
 }
 
 #include "op100x/base.hpp"

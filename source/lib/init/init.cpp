@@ -69,12 +69,22 @@ extern "C" {
 #include <lib/util/sys/mem_layout.hpp>
 #include <lib/patch/patcher_impl.hpp>
 
+#include <lib/log/logger_mgr.hpp>
+#include <program/loggers.hpp>
+
+#include <lib/util/sys/mem_layout.hpp>
+
 extern "C" void exl_init() {
+
     /* Getting the SOC type in an application context is more effort than it's worth. */
     #ifndef EXL_AS_MODULE
+    Logging.Log(EXL_LOG_PREFIX "Inferring SOC type...");
     exl::util::impl::InitSocType();
     #endif
+
+    Logging.Log(EXL_LOG_PREFIX "Inspecting memory layout...");
     exl::util::impl::InitMemLayout();
     virtmemSetup();
+    Logging.Log(EXL_LOG_PREFIX "Initializing patcher...");
     exl::patch::impl::InitPatcherImpl();
 }

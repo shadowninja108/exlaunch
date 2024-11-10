@@ -8,7 +8,7 @@ extern "C" {
     __attribute__((section(".bss")))
     rtld::ModuleObject exl_nx_module_runtime;
 
-    void exl_dynamic(uintptr_t aslr_base, const Elf_Dyn* dynamic)
+    void exl_relocate_self(uintptr_t aslr_base, const Elf_Dyn* dynamic)
     {
         Elf_Addr rela = 0;
         Elf_Addr rel = 0;

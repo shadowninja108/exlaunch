@@ -1,10 +1,13 @@
 #pragma once
 
 #include "util/func_ptrs.hpp"
+#include "util/type_traits.hpp"
 #include "util/modules.hpp"
 
 #include <type_traits>
 #include <cstring>
+#include <lib/log/logger_mgr.hpp>
+#include <program/loggers.hpp>
 
 #include "nx64/impl.hpp"
 
@@ -17,7 +20,7 @@ namespace exl::hook {
     namespace arch = nx64;
     
     namespace {
-        using Entrypoint = util::GenericFuncPtr<void, void*, void*>;
+        using Entrypoint = util::CFuncPtr<void, void*, void*>;
     };
 
     inline void NORETURN CallTargetEntrypoint(void* x0, void* x1) {
@@ -30,28 +33,32 @@ namespace exl::hook {
         arch::Initialize();
     }
     
-    template<typename InFunc, typename CbFunc>
-    CbFunc Hook(InFunc hook, CbFunc callback, bool do_trampoline = false) {
+    template<typename FuncPtr, typename CallbackPtr>
+    requires (!std::is_member_function_pointer_v<FuncPtr>) && (!std::is_member_function_pointer_v<CallbackPtr>)
+    CallbackPtr Hook(FuncPtr hook, CallbackPtr callback, bool do_trampoline = false) {
+        uintptr_t trampoline = arch::Hook(
+            std::bit_cast<uintptr_t>(hook),
+            std::bit_cast<uintptr_t>(callback),
+            do_trampoline
+        );
 
-        /* Workaround for being unable to cast member functions. */
-        /* Probably some horrible UB here? */
-        uintptr_t hookp;
-        uintptr_t callbackp;
-        std::memcpy(&hookp, &hook, sizeof(hookp));
-        std::memcpy(&callbackp, &callback, sizeof(callbackp));
+        return std::bit_cast<CallbackPtr>(trampoline);
+    }
 
-        uintptr_t trampoline = arch::Hook(hookp, callbackp, do_trampoline);
+    /* For member function pointers. */
+    template<typename MemberFuncPtr>
+    requires util::FuncPtrTraits<MemberFuncPtr>::IsMemberFunc
+    auto Hook(MemberFuncPtr hook, typename util::FuncPtrTraits<MemberFuncPtr>::CPtr callback, bool do_trampoline = false) {
+        auto adapted = util::member_func::Adapt(hook);
+        if(adapted.IsVirtual()) {
+            R_ABORT_UNLESS(result::VirtualMemberFunctionPointerNotSupported);
+        }
 
-        /* Workaround for being unable to cast member functions. */
-        /* Probably some horrible UB here? */
-        CbFunc ret;
-        std::memcpy(&ret, &trampoline, sizeof(trampoline));
-
-        return ret;
+        return Hook(adapted.GetPtr(nullptr), callback, do_trampoline);
     }
 
     using InlineCtx = arch::InlineCtx;
-    using InlineCallback = void (*)(InlineCtx*);
+    using InlineCallback = util::CFuncPtr<void, InlineCtx*>;
 
     inline void HookInline(uintptr_t hook, InlineCallback callback) {
         arch::HookInline(hook, reinterpret_cast<uintptr_t>(callback));

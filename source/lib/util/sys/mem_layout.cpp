@@ -1,8 +1,11 @@
 #include "mem_layout.hpp"
 
-#include <reloc/rtld.hpp>
+#include <lib/log/logger_mgr.hpp>
+#include <lib/util/strings.hpp>
+#include <program/loggers.hpp>
 #include <program/setting.hpp>
-    
+
+
 /* Provided by linkerscript, the start of our executable. */
 extern "C" {
     extern char __module_start;
@@ -10,17 +13,31 @@ extern "C" {
 
 namespace exl::util {
 
+    #if defined EXL_AS_MODULE
+    namespace mem_layout {
+        ModuleIndex s_SelfModuleIdx = ModuleIndex::End;
+    }
+    #endif
+
+    namespace impl::mem_layout {
+        std::array<ModuleInfo, static_cast<int>(ModuleIndex::End)> s_ModuleInfos;
+        std::bitset<static_cast<int>(ModuleIndex::End)> s_ModuleBitset;
+    }
+
     static void FindModules() {
         /* Setup loop, starting address zero. */
         MemoryInfo meminfo { };
         u32 pageinfo;
+
+        auto& moduleInfos = impl::mem_layout::s_ModuleInfos;
+        auto& moduleBitset = impl::mem_layout::s_ModuleBitset;
 
         enum class State {
             LookingForCodeStatic,
             ExpectingRodata,
             ExpectingData,
         } state = State::LookingForCodeStatic;
-        int nextModIdx = 0;
+        int nextModIdx = static_cast<int>(ModuleIndex::Start);
 
         uintptr_t offset = 0;
         uintptr_t prevOffset = 0;
@@ -34,8 +51,8 @@ namespace exl::util {
 
         do {
             /* Ensure we don't find too many modules. */
-            if(util::mem_layout::s_MaxModules <= nextModIdx)
-                EXL_ABORT(result::TooManyStaticModules);
+            if(static_cast<int>(util::ModuleIndex::End) <= nextModIdx)
+                R_ABORT_UNLESS(result::TooManyStaticModules);
 
             prevOffset = offset;
 
@@ -88,16 +105,17 @@ namespace exl::util {
                     data.m_Size = meminfo.size;
                     total.m_Size = data.GetEnd() - total.m_Start;
 
-                    /* This only needs to be determined at runtime if we are in an application. */
-                    #ifdef EXL_AS_MODULE
-                    if(total.m_Start == (uintptr_t) &__module_start)
-                        util::mem_layout::s_SelfModuleIdx = nextModIdx;
-                    #endif
+                    /* Get the MOD0 pointer. */
+                    struct {
+                        std::uint32_t m_EntrypointInstruction;
+                        std::uint32_t m_Mod0Offset;
+                    }* header = reinterpret_cast<decltype(header)>(curModInfo.m_Text.m_Start);
+                    curModInfo.m_Mod = reinterpret_cast<const Mod0*>(curModInfo.m_Text.m_Start + header->m_Mod0Offset);
 
                     /* Store built module info. */
-                    impl::mem_layout::s_ModuleInfos[nextModIdx] = curModInfo;
+                    moduleInfos[nextModIdx] = curModInfo;
+                    moduleBitset[nextModIdx] = true;
                     nextModIdx++;
-                    util::mem_layout::s_ModuleCount = nextModIdx;
 
                     /* Back to initial state. */
                     reset();
@@ -109,13 +127,41 @@ namespace exl::util {
         /* Exit once we've wrapped the address space. */
         } while(offset >= prevOffset);
 
-        /* Ensure we found a valid self index and module count. */
+        /* We must find at least one module. */
+        EXL_ASSERT(moduleBitset[static_cast<int>(ModuleIndex::Rtld)]);
+
         #ifdef EXL_AS_MODULE
-        EXL_ASSERT(util::mem_layout::s_SelfModuleIdx != -1);
-        EXL_ASSERT(util::mem_layout::s_SelfModuleIdx < util::mem_layout::s_MaxModules);
+        /* There also must be a main module. */
+        EXL_ASSERT(moduleBitset[static_cast<int>(ModuleIndex::Main)]);
+        /* Move the last module found to the sdk index, if it's not there already. */
+        if(nextModIdx != static_cast<int>(ModuleIndex::End)) {
+            moduleInfos[static_cast<int>(ModuleIndex::Sdk)] = moduleInfos[nextModIdx-1];
+            moduleInfos[nextModIdx-1] = {};
+            moduleBitset[static_cast<int>(ModuleIndex::Sdk)] = true;
+            moduleBitset[nextModIdx-1] = false;
+        }
+
+        /* Note where our current module is. */
+        size_t i = 0;
+        for(const auto& info : moduleInfos) {
+            /* Ignore if this module is not found. */
+            if(!moduleBitset[i]) {
+                i++;
+                continue;
+            }
+
+            /* If the start of the module is the start of us, we found ourselves. */
+            if(info.m_Total.m_Start == reinterpret_cast<uintptr_t>(&__module_start)) {
+                mem_layout::s_SelfModuleIdx = static_cast<ModuleIndex>(i);
+                break;
+            }
+            i++;
+        }
+
+        /* Ensure we found a valid self index. */
+        EXL_ASSERT(mem_layout::s_SelfModuleIdx < ModuleIndex::End);
+        EXL_ASSERT(moduleBitset[static_cast<int>(mem_layout::s_SelfModuleIdx)]);
         #endif
-        EXL_ASSERT(util::mem_layout::s_ModuleCount != -1);
-        EXL_ASSERT(util::mem_layout::s_ModuleCount <= util::mem_layout::s_MaxModules);
     }
 
     static Result TryGetAddressFromInfo(InfoType type, uintptr_t* ptr) {
@@ -161,18 +207,59 @@ namespace exl::util {
             GetAddressFromInfo(InfoType_HeapRegionSize)
         );
 
-        if(R_FAILED(TryGetAddressFromInfo(InfoType_AslrRegionAddress,   &util::mem_layout::s_Aslr.m_Start)) ||
-           R_FAILED(TryGetAddressFromInfo(InfoType_AslrRegionSize,      &util::mem_layout::s_Aslr.m_Size)) ||
-           R_FAILED(TryGetAddressFromInfo(InfoType_StackRegionAddress,  &util::mem_layout::s_Stack.m_Start)) ||
-           R_FAILED(TryGetAddressFromInfo(InfoType_StackRegionSize,     &util::mem_layout::s_Stack.m_Size))
+        if(R_FAILED(TryGetAddressFromInfo(InfoType_AslrRegionAddress,   &mem_layout::s_Aslr.m_Start)) ||
+           R_FAILED(TryGetAddressFromInfo(InfoType_AslrRegionSize,      &mem_layout::s_Aslr.m_Size)) ||
+           R_FAILED(TryGetAddressFromInfo(InfoType_StackRegionAddress,  &mem_layout::s_Stack.m_Start)) ||
+           R_FAILED(TryGetAddressFromInfo(InfoType_StackRegionSize,     &mem_layout::s_Stack.m_Size))
         )
         {
-            EXL_ASSERT(R_SUCCEEDED(InferAslrAndStack()));
+            R_ASSERT(InferAslrAndStack());
         }
+    }
+
+    static void LogLayout() {
+        Logging.Log(EXL_LOG_PREFIX "Static module layout:");
+
+        /* Collect up the module names and measure the longest length. */
+        std::string_view moduleNames[static_cast<size_t>(ModuleIndex::End)];
+        size_t maxModuleName = 0;
+        for(size_t i = 0; i < static_cast<size_t>(ModuleIndex::End); i++) {
+            /* Ignore if this module is not found. */
+            if(!impl::mem_layout::s_ModuleBitset[i])
+                continue;
+
+            const auto& mod = GetModuleInfo(static_cast<ModuleIndex>(i));
+            moduleNames[i] = mod.GetModuleName();
+            maxModuleName = std::max(maxModuleName, moduleNames[i].size());
+        }
+
+        /* Print the module names. */
+        for(size_t i = 0; i < static_cast<size_t>(ModuleIndex::End); i++) {
+            /* Ignore if this module is not found. */
+            if(!impl::mem_layout::s_ModuleBitset[i])
+                continue;
+
+            const auto& mod = GetModuleInfo(static_cast<ModuleIndex>(i));
+
+            /* Copy name into it's own buffer so it can be null terminated. */
+            char nameBuffer[util::ModuleInfo::s_ModulePathLengthMax+1];
+            util::CopyString(nameBuffer, moduleNames[i]);
+
+            Logging.Log(EXL_LOG_PREFIX "[ %-*s ]: \t%016lx-%016lx", maxModuleName, nameBuffer, mod.m_Total.m_Start, mod.m_Total.GetEnd());
+        }
+
+        Logging.Log("");
+        Logging.Log(EXL_LOG_PREFIX "Alias: \t%016lx-%016lx", mem_layout::s_Alias.m_Start,    mem_layout::s_Alias.GetEnd());
+        Logging.Log(EXL_LOG_PREFIX "Heap: \t%016lx-%016lx",  mem_layout::s_Heap.m_Start,     mem_layout::s_Heap.GetEnd());
+        Logging.Log(EXL_LOG_PREFIX "Aslr: \t%016lx-%016lx",  mem_layout::s_Aslr.m_Start,     mem_layout::s_Aslr.GetEnd());
+        Logging.Log(EXL_LOG_PREFIX "Stack: \t%016lx-%016lx", mem_layout::s_Stack.m_Start,    mem_layout::s_Stack.GetEnd());
     }
 
     void impl::InitMemLayout() {
         FindModules();
         FindRegions();
+
+        if(Logging.IsEnabled())
+            LogLayout();
     }
 };

@@ -70,7 +70,7 @@ bss_loop:
     // Parse ELF .dynamic section (which applies relocations to our module)
     mov x0, x23
     FROM_MOD0 1, 0x4
-    bl   exl_dynamic
+    bl   exl_relocate_self
 
     mov  x0, x25
     mov  x1, x26

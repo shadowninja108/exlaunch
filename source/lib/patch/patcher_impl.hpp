@@ -10,7 +10,7 @@ namespace exl::patch {
     namespace impl {
         inline util::TypedStorage<const util::RwPages> s_Storage;
 
-        inline const util::RwPages& GetRwPages() { return util::GetReference(s_Storage); }
+        [[gnu::const]] inline const util::RwPages& GetRwPages() { return util::GetReference(s_Storage); }
 
         inline void InitPatcherImpl() {
             auto& mod = util::GetMainModuleInfo();

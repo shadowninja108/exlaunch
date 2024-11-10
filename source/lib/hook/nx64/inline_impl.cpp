@@ -47,7 +47,7 @@ namespace exl::hook::nx64 {
     void HookInline(uintptr_t hook, uintptr_t callback) {
         /* Ensure enough space in the pool. */
         if(s_EntryIndex >= InlinePoolCount)
-            EXL_ABORT(result::HookTrampolineAllocFail);
+            R_ABORT_UNLESS(result::HookTrampolineAllocFail);
 
         /* Grab entry from pool. */
         auto entryRx = &GetEntryRx()[s_EntryIndex];
