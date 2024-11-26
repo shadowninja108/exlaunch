@@ -9,7 +9,7 @@
 namespace exl::hook::nx64 {
 
     /* Size of stack to reserve for the context. Adjust this along with CTX_STACK_SIZE in inline_asm.s */
-    static constexpr int CtxStackSize = 0x100;
+    static constexpr int CtxStackBaseSize = 0x100;
 
     namespace reg = exl::armv8::reg;
     namespace inst = exl::armv8::inst;
@@ -26,10 +26,12 @@ namespace exl::hook::nx64 {
 
     extern "C" {
         extern char exl_inline_hook_impl;
+        extern char exl_inline_float_hook_impl;
     }
 
-    static uintptr_t GetImpl() {
-        return reinterpret_cast<uintptr_t>(&exl_inline_hook_impl);
+    static uintptr_t GetImpl(bool use_float_impl) {
+        return use_float_impl ? reinterpret_cast<uintptr_t>(&exl_inline_float_hook_impl) :
+               reinterpret_cast<uintptr_t>(&exl_inline_hook_impl);
     }
 
     static const Entry* GetEntryRx() {
@@ -44,7 +46,7 @@ namespace exl::hook::nx64 {
         s_InlineHookJit.Initialize();
     }
 
-    void HookInline(uintptr_t hook, uintptr_t callback) {
+    void HookInline(uintptr_t hook, uintptr_t callback, bool capture_floats) {
         /* Ensure enough space in the pool. */
         if(s_EntryIndex >= InlinePoolCount)
             R_ABORT_UNLESS(result::HookTrampolineAllocFail);
@@ -59,11 +61,11 @@ namespace exl::hook::nx64 {
         /* Hook to call into the entry's entrypoint. Assign trampoline to be used by impl. */
         auto trampoline = Hook(hook, entryCb, true);
         /* Offset of LR before SP is moved. */
-        static constexpr int lrBackupOffset = int(offsetof(InlineCtx, m_Gpr.m_Lr)) - CtxStackSize;
+        static constexpr int lrBackupOffset = int(offsetof(InlineCtx, m_Gpr.m_Lr)) - CtxStackBaseSize;
         static_assert(lrBackupOffset == -0x10, "InlineCtx is not ABI compatible.");
 
         /* Construct entrypoint instructions. */
-        auto impl = GetImpl();
+        auto impl = GetImpl(capture_floats);
         entryRw->m_CbEntry = {
             /* Backup LR register to stack, as we are about to trash it. */
             inst::SturUnscaledImmediate(reg::LR, reg::SP, lrBackupOffset),

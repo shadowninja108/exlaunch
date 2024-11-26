@@ -34,6 +34,8 @@ typedef	unsigned short	ushort;
 typedef	unsigned int	uint;	
 typedef	unsigned long	ulong;
 
+typedef float f32;
+typedef double f64;
 
 #define ALIGN_UP(x, a) ((((uintptr_t)x) + (((uintptr_t)a)-1)) & ~(((uintptr_t)a)-1))
 #define ALIGN_DOWN(x, a) ((uintptr_t)(x) & ~(((uintptr_t)(a)) - 1))
