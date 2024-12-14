@@ -5,8 +5,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../elf.hpp"
-
 namespace rtld {
 
 struct ModuleObject {

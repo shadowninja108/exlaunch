@@ -1,10 +1,11 @@
+
+#include "../rtld.hpp"
 #include "ModuleObject.hpp"
 
 #include <string.h>
-
-#include "lib/reloc/rtld.hpp"
-#include "lib/diag/assert.hpp"
+#include <lib/diag/assert.hpp>
 #include "utils.hpp"
+
 
 namespace rtld {
 
@@ -88,7 +89,7 @@ void ModuleObject::Initialize(char *aslr_base, Elf_Dyn *dynamic) {
             }
 
             case DT_RELAENT: {
-                EXL_ASSERT(dynamic->d_un.d_val != sizeof(Elf_Rela));
+                EXL_ASSERT(dynamic->d_un.d_val == sizeof(Elf_Rela));
                 break;
             }
 

@@ -1,8 +1,6 @@
-#include "elf.hpp"
+#include <common.hpp>
 
-#include "common.hpp"
-
-#include "rtld.hpp"
+#include "../rtld.hpp"
 
 extern "C" {
     __attribute__((section(".bss")))

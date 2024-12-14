@@ -10,8 +10,6 @@
 #include "lib/log/ilogger.hpp"
 #include "lib/log/svc_logger.hpp"
 
-#include "lib/reloc/rtld.hpp"
-
 #include "lib/patch/code_patcher.hpp"
 #include "lib/patch/patcher_impl.hpp"
 #include "lib/patch/random_access_patcher.hpp"

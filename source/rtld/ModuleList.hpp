@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ModuleObject.hpp"
-
 namespace rtld {
 
 struct ModuleObjectList {

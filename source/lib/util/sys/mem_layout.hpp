@@ -6,7 +6,7 @@
 #include <bitset>
 #include <cstdint>
 #include <string_view>
-#include <lib/reloc/rtld.hpp>
+#include <rtld.hpp>
 
 namespace exl::util {
 
