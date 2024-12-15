@@ -23,6 +23,11 @@
 #include "lib/result.hpp"
 #include "lib/libsetting.hpp"
 
+#include <stdfloat>
+
+using f16 = std::float16_t;
+using f128 = std::float128_t;
+
 #define APPEND_IMPL(x, y) x ## y
 #define APPEND(x, y) APPEND_IMPL(x, y)
 

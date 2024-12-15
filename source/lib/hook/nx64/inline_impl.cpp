@@ -8,8 +8,9 @@
 
 namespace exl::hook::nx64 {
 
-    /* Size of stack to reserve for the context. Adjust this along with CTX_STACK_SIZE in inline_asm.s */
+    /* Size of stack to reserve for the contexts. Adjust this along with variables in inline_asm.s */
     static constexpr int CtxStackBaseSize = 0x100;
+    static constexpr int CtxStackFloatSize = 0x200;
 
     namespace reg = exl::armv8::reg;
     namespace inst = exl::armv8::inst;
@@ -30,8 +31,11 @@ namespace exl::hook::nx64 {
     }
 
     static uintptr_t GetImpl(bool use_float_impl) {
-        return use_float_impl ? reinterpret_cast<uintptr_t>(&exl_inline_float_hook_impl) :
-               reinterpret_cast<uintptr_t>(&exl_inline_hook_impl);
+        if(!use_float_impl) {
+            return reinterpret_cast<uintptr_t>(&exl_inline_hook_impl);
+        } else {
+            return  reinterpret_cast<uintptr_t>(&exl_inline_float_hook_impl);
+        }
     }
 
     static const Entry* GetEntryRx() {
@@ -64,8 +68,14 @@ namespace exl::hook::nx64 {
         static constexpr int lrBackupOffset = int(offsetof(InlineCtx, m_Gpr.m_Lr)) - CtxStackBaseSize;
         static_assert(lrBackupOffset == -0x10, "InlineCtx is not ABI compatible.");
 
-        /* Construct entrypoint instructions. */
+        /* Ensure the context's sizes line up.  */
+        static_assert(sizeof(InlineFloatCtx) == CtxStackBaseSize + CtxStackFloatSize, "Float context will not fit in the stack!");
+        static_assert(sizeof(FloatRegisters) == CtxStackFloatSize, "Float context will not fit in stack!");
+
+        /* Select appropriate implementation for entrypoint. */
         auto impl = GetImpl(capture_floats);
+
+        /* Construct entrypoint instructions. */
         entryRw->m_CbEntry = {
             /* Backup LR register to stack, as we are about to trash it. */
             inst::SturUnscaledImmediate(reg::LR, reg::SP, lrBackupOffset),

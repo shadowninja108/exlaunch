@@ -27,6 +27,9 @@
 #include "lib/util/random.hpp"
 #include "lib/util/strings.hpp"
 #include "lib/util/typed_storage.hpp"
+#include "lib/util/version.hpp"
+
+#include "lib/reloc/reloc.hpp"
 
 #include "lib/hook/base.hpp"
 #include "lib/hook/class.hpp"

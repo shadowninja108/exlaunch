@@ -81,7 +81,7 @@ namespace exl::util {
 
         template<typename T, size_t Size>
         requires impl::Hashable<T>
-        constexpr static HashType Compute(std::span<const T, Size> input, uint32_t seed = 0) {
+        constexpr static HashType Compute(std::span<const T, Size> input, BlockType seed = 0) {
             Murmur3 m{};
             m.Initialize(seed);
 
@@ -101,6 +101,10 @@ namespace exl::util {
 
             /* Hash remainder and finalize, returning the hash. */
             return m.Finalize(input.subspan(roundedDown, remainder));
+        }
+
+        static constexpr inline BlockType Compute(std::string_view sv, BlockType seed = 0) {
+            return Compute(std::span<const char>(sv.data(), sv.size()), seed);
         }
     };
 }

@@ -68,6 +68,8 @@ extern "C" {
 #include <lib/util/sys/soc.hpp>
 #include <lib/util/sys/mem_layout.hpp>
 #include <lib/patch/patcher_impl.hpp>
+#include <lib/util/version.hpp>
+#include <lib/reloc/reloc.hpp>
 
 #include <lib/log/logger_mgr.hpp>
 #include <program/loggers.hpp>
@@ -87,4 +89,6 @@ extern "C" void exl_init() {
     virtmemSetup();
     Logging.Log(EXL_LOG_PREFIX "Initializing patcher...");
     exl::patch::impl::InitPatcherImpl();
+    exl::util::impl::InitVersion();
+    exl::reloc::impl::Initialize();
 }
