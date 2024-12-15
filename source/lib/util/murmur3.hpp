@@ -8,9 +8,11 @@
 
 namespace exl::util {
 
-    namespace impl {
+    namespace impl::murmur3 {
         template<typename T>
-        concept Hashable = std::same_as<T, std::byte> || std::same_as<T, char>;
+        concept Hashable = 
+            std::same_as<T, std::byte> || 
+            std::same_as<T, char>;
     }
 
     struct Murmur3 {
@@ -48,7 +50,7 @@ namespace exl::util {
         }
 
         template<typename T, size_t Size>
-        requires impl::Hashable<T>
+        requires impl::murmur3::Hashable<T>
         constexpr HashType Finalize(std::span<const T, Size> end)
         {
             BlockType k = 0;
@@ -80,7 +82,7 @@ namespace exl::util {
         }
 
         template<typename T, size_t Size>
-        requires impl::Hashable<T>
+        requires impl::murmur3::Hashable<T>
         constexpr static HashType Compute(std::span<const T, Size> input, BlockType seed = 0) {
             Murmur3 m{};
             m.Initialize(seed);

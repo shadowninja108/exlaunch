@@ -2,8 +2,9 @@
 #include <common.hpp>
 
 #include <array>
-#include <lib.hpp>
 
+#include "../../util/sys/jit.hpp"
+#include "../../armv8.hpp"
 #include "impl.hpp"
 
 namespace exl::hook::nx64 {

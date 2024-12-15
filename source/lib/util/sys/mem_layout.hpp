@@ -15,6 +15,14 @@ namespace exl::util {
         size_t m_Size;
 
         constexpr uintptr_t GetEnd() const { return m_Start + m_Size; }
+
+        constexpr bool InRange(uintptr_t value) const {
+            return m_Start <= value && value < GetEnd();
+        }
+
+        constexpr bool InRangeInclusive(uintptr_t value) const {
+            return m_Start <= value && value <= GetEnd();
+        }
     };
 
     struct Mod0 {
@@ -133,4 +141,25 @@ namespace exl::util {
     static inline const ModuleInfo& GetSelfModuleInfo() { return GetModuleInfo(mem_layout::s_SelfModuleIdx); }
     #endif
 
+    inline const ModuleInfo* TryGetModule(uintptr_t pointer) {
+        for(size_t i = static_cast<int>(ModuleIndex::Start); i < static_cast<int>(ModuleIndex::End); i++) {
+            /* Ignore non-existent modules. */
+            if(!impl::mem_layout::s_ModuleBitset[i])
+                continue;
+                
+            const ModuleInfo* module = &impl::mem_layout::s_ModuleInfos[i];
+
+            if(module->m_Total.InRange(pointer))
+                return module;
+        }
+
+        return nullptr;
+    }
+
+    inline bool IsInModule(uintptr_t pointer, ModuleIndex module) {
+        if(!HasModule(module))
+            return false;
+        
+        return GetModuleInfo(module).m_Total.InRange(pointer);
+    }
 }

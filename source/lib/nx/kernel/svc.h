@@ -5,6 +5,7 @@
  */
 #pragma once
 #include "../types.h"
+#include "../arm/thread_context.h"
 
 /// Pseudo handle for the current process.
 #define CUR_PROCESS_HANDLE 0xFFFF8001
@@ -678,6 +679,16 @@ Result svcGetResourceLimitCurrentValue(u64* out, Handle reslimit_h, LimitableRes
  * @note Syscall number 0x32.
  */
 Result svcSetThreadActivity(Handle thread, bool paused);
+
+/**
+ * @brief Dumps the registers of a thread paused by @ref svcSetThreadActivity (register groups: all).
+ * @param[out] ctx Output thread context (register dump).
+ * @param[in] thread Thread handle.
+ * @return Result code.
+ * @note Syscall number 0x33.
+ * @warning Official kernel will not dump x0..x18 if the thread is currently executing a system call, and prior to 6.0.0 doesn't dump TPIDR_EL0.
+ */
+Result svcGetThreadContext3(ThreadContext* ctx, Handle thread);
 
 ///@name Inter-process communication (IPC)
 ///@{
