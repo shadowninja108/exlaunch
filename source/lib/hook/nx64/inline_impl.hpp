@@ -196,9 +196,9 @@ namespace exl::hook::nx64 {
             static_assert(0 <= Index && Index < 32, "Register index must not be out of bounds!");
             if constexpr(Length == 1) {
                 if constexpr(Type == 'Q')
-                    return V128[Length].Q;
+                    return V128[Index].Q;
                 else if constexpr(Type == 'D')
-                    return V64[Length].D;
+                    return V64[Index].D;
                 else static_assert(false, "Invalid type for 1 length vector!");
             } else if constexpr(Length == 2) {
                 if constexpr(Type == 'D')
