@@ -33,6 +33,8 @@
     stp x24, x25, [sp, #0xC0]
     stp x26, x27, [sp, #0xD0]
     stp x28, x29, [sp, #0xE0]
+    add x15, sp, CTX_STACK_BASE_SIZE
+    str x15, [sp, #0xF8]
 .endm
 
 .macro armBackupFloatRegisters

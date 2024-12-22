@@ -10,11 +10,12 @@ namespace exl::hook::nx64 {
     };
 
     union GpRegisters {
-        GpRegister m_Gp[31];
+        GpRegister m_Gp[32];
         struct {
             GpRegister _Gp[29];
             GpRegister m_Fp;
             GpRegister m_Lr;
+            GpRegister m_Sp;
         };
     };
 
@@ -142,6 +143,17 @@ namespace exl::hook::nx64 {
             }
         };
 
+        struct SpAccessorImpl {
+            u64 Get() {
+                return reinterpret_cast<GpRegisters*>(this)->m_Sp.X;
+            }
+
+            template<typename T>
+            T& operator[](int offset) {
+                return *reinterpret_cast<T*>(Get() + offset);
+            }
+        };
+
         #define ACCESSOR(inherit, name, type, length, arr, member)                                          \
             struct name##RegisterAccessor : public inherit##Impl {                                          \
                 type& operator[](int index) {                                                               \
@@ -150,8 +162,8 @@ namespace exl::hook::nx64 {
                 }                                                                                           \
             }
         
-        ACCESSOR(GpRegisterAccessor,    Gp64,       u64,    31, m_Gp, X);
-        ACCESSOR(GpRegisterAccessor,    Gp32,       u32,    31, m_Gp, W);
+        ACCESSOR(GpRegisterAccessor,    Gp64,       u64,    32, m_Gp, X);
+        ACCESSOR(GpRegisterAccessor,    Gp32,       u32,    32, m_Gp, W);
         ACCESSOR(FloatRegisterAccessor, Vector128,  Vec128, 32, m_Fr, V128);
         ACCESSOR(FloatRegisterAccessor, Vector64,   Vec64,  32, m_Fr, V64);
         ACCESSOR(FloatRegisterAccessor, Float128,   f128,   32, m_Fr, Q);
@@ -169,6 +181,7 @@ namespace exl::hook::nx64 {
             /* Accessors are union'd with the gprs so that they can be accessed directly. */
             impl::Gp64RegisterAccessor X;
             impl::Gp32RegisterAccessor W;
+            impl::SpAccessorImpl SP;
             GpRegisters m_Gpr;
         };
     };
