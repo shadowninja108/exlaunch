@@ -2,6 +2,8 @@
 
 #include <common.hpp>
 
+#include "../../util/neon.hpp"
+
 namespace exl::hook::nx64 {
 
     union GpRegister {
@@ -18,98 +20,19 @@ namespace exl::hook::nx64 {
         };
     };
 
-    #define VECTOR_SIZE(size) __attribute__((vector_size(size)))
-
-    using F16x4  =  f16  VECTOR_SIZE(8);
-    using F32x2  =  f32  VECTOR_SIZE(8);
-    using F64x1  =  f64  VECTOR_SIZE(8);
-
-    using F16x8  =  f16  VECTOR_SIZE(16);
-    using F32x4  =  f32  VECTOR_SIZE(16);
-    using F64x2  =  f64  VECTOR_SIZE(16);
-    using F128x1 =  f128 VECTOR_SIZE(16);
-
-    #undef VECTOR_SIZE
-
-    static_assert(sizeof(F16x4)  == sizeof(f16)  * 4, "F16x4 is wrong!");
-    static_assert(sizeof(F32x2)  == sizeof(f32)  * 2, "F32x2 is wrong!");
-    static_assert(sizeof(F64x1)  == sizeof(f64)  * 1, "F64x1 is wrong!");
-
-    static_assert(sizeof(F16x8)  == sizeof(f16)  * 8, "F16x8 is wrong!");
-    static_assert(sizeof(F32x4)  == sizeof(f32)  * 4, "F32x4 is wrong!");
-    static_assert(sizeof(F64x2)  == sizeof(f64)  * 2, "F64x2 is wrong!");
-    static_assert(sizeof(F128x1) == sizeof(f128) * 1, "F128x1 is wrong!");
-
-    namespace impl {
-        
-        template<char Type>
-        struct TypeCharAdapter { static_assert(false, "Invalid float type!"); };
-
-        template<>
-        struct TypeCharAdapter<'Q'> {
-            using Type = f128;
-            static constexpr size_t Size = sizeof(Type);
-        };
-        template<>
-        struct TypeCharAdapter<'D'> {
-            using Type = f64;
-            static constexpr size_t Size = sizeof(Type);
-        };
-        template<>
-        struct TypeCharAdapter<'S'> {
-            using Type = f32;
-            static constexpr size_t Size = sizeof(Type);
-        };
-        template<>
-        struct TypeCharAdapter<'H'> {
-            using Type = f16;
-            static constexpr size_t Size = sizeof(Type);
-        };
-
-        /* I should be able to do this, but GCC seems unhappy? Did I really manage to break the compiler? Has to be some sort of achievement. */
-        /* Also yes I recognize how cursed this is. */
-        // template<size_t Length, char Type>
-        // using VectorAdapter = TypeCharAdapter<Type>::Type VECTOR_SIZE(TypeCharAdapter<Type>::Size * Length);
-
-
-        /* GCC seems to not be happy with implementing this properly (see above), so I have to specialize each case :( */
-        template<size_t Length, char CType>
-        struct VectorAdapter { using Type = nullptr_t; };
-
-        #define ADAPTER(type, length, result)       \
-            template<>                              \
-            struct VectorAdapter<type, length> {    \
-                using Type = result;                \
-            }
-
-        ADAPTER('H', 4, F16x4);
-        ADAPTER('S', 2, F32x2);
-        ADAPTER('D', 1, F64x1);
-
-        ADAPTER('H', 8, F16x8);
-        ADAPTER('S', 4, F32x4);
-        ADAPTER('D', 2, F64x2);
-        ADAPTER('Q', 1, F128x1);
-        /* TODO: 8-bit floats? That's a thing? */
-        // ADAPTER('B', 8, F8x8);
-        // ADAPTER('B', 16, F8x16);
-
-        #undef ADAPTER
-    }
-
     union Vec64 {
-        F64x1 D;
-        F32x2 S;
-        F16x4 H;
+        util::neon::F64x1 D;
+        util::neon::F32x2 S;
+        util::neon::F16x4 H;
         /* TODO: 8-bit floats? That's a thing? */
         // F8x8 B;
     };
 
     union Vec128 {
-        F128x1 Q;
-        F64x2 D;
-        F32x4 S;
-        F16x8 H;
+        util::neon::F128x1 Q;
+        util::neon::F64x2 D;
+        util::neon::F32x4 S;
+        util::neon::F16x8 H;
         /* TODO: 8-bit floats? That's a thing? */
         // F8x16 B;
     };
@@ -176,6 +99,7 @@ namespace exl::hook::nx64 {
     struct InlineFloatCtx : public InlineCtx {
         /* Ensure the data is aligned for efficient access. */
         union ALIGNED(sizeof(FloatRegister)) {
+            /* Accessors to simplify access to registers. */
             impl::Vector128RegisterAccessor V128;
             impl::Float128RegisterAccessor Q;
             impl::Vector64RegisterAccessor V64;
@@ -192,7 +116,7 @@ namespace exl::hook::nx64 {
             Pretty cursed, but I think this might make things easier for people who do not understand NEON (ie, people who touch grass).
         */
         template<size_t Index, size_t Length, char Type>
-        ALWAYS_INLINE typename impl::VectorAdapter<Type, Length>::Type& V() {
+        ALWAYS_INLINE auto& V() {
             static_assert(0 <= Index && Index < 32, "Register index must not be out of bounds!");
             if constexpr(Length == 1) {
                 if constexpr(Type == 'Q')
