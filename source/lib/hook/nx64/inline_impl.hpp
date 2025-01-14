@@ -72,7 +72,7 @@ namespace exl::hook::nx64 {
             }
 
             template<typename T>
-            T& operator[](int offset) {
+            T& at(int offset) {
                 return *reinterpret_cast<T*>(Get() + offset);
             }
         };
