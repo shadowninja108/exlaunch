@@ -15,6 +15,7 @@ namespace exl::reloc {
         std::span<const LookupEntryBin> m_Entries;
 
         Lookup() = default;
+        Lookup(std::span<const LookupEntryBin> entries) : m_Entries(entries) {}
 
         ALWAYS_INLINE const auto& GetEntries() const {
             return m_Entries;

@@ -3,6 +3,7 @@
 #include <string_view>
 #include <cstdint>
 #include <climits>
+#include <span>
 #include <lib/util/murmur3.hpp>
 #include <lib/util/module_index.hpp>
 
@@ -28,6 +29,7 @@ namespace exl::reloc {
             return m_SymbolHash < other;
         }
     };
+    using TableBin = std::span<const LookupEntryBin>;
 
     namespace impl {
 

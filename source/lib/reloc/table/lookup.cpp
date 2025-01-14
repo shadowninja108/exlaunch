@@ -23,7 +23,7 @@ namespace exl::reloc {
 
         std::string_view GetName() {
             auto ptr = &m_Mod.dynstr[m_Ref.st_name];
-            return std::string_view(ptr, strlen(ptr));
+            return std::string_view(ptr, std::strlen(ptr));
         }
     };
 

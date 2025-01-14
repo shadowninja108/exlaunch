@@ -8,7 +8,8 @@
 #include <tuple>
 #include "table/lookup_entry.hpp"
 #include "table/lookup.hpp"
-#include <program/version.hpp>
+#include "table/table.hpp"
+#include "table/table_set.hpp"
 
 namespace exl::reloc {
 

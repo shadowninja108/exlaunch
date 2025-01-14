@@ -47,7 +47,7 @@ namespace exl::hook {
 
     /* For member function pointers. */
     template<typename MemberFuncPtr>
-    requires util::FuncPtrTraits<MemberFuncPtr>::IsMemberFunc
+    requires std::is_member_function_pointer_v<MemberFuncPtr> && util::FuncPtrTraits<MemberFuncPtr>::IsMemberFunc
     auto Hook(MemberFuncPtr hook, typename util::FuncPtrTraits<MemberFuncPtr>::CPtr callback, bool do_trampoline = false) {
         auto adapted = util::member_func::Adapt(hook);
         if(adapted.IsVirtual()) {
