@@ -47,3 +47,5 @@ typedef double f64;
 #define PAGE_SIZE (0x1000)
 #define ALWAYS_INLINE inline __attribute__((always_inline))
 #define BITSIZEOF(x) (sizeof(x) * CHAR_BIT)
+#define STRINGIFY(a) STRINGIFY_(a)
+#define STRINGIFY_(a) #a
