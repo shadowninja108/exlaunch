@@ -3,6 +3,10 @@
 #include <common.hpp>
 
 #include "base.hpp"
+#ifdef EXL_LOAD_KIND_MODULE
+#include "ro.h"
+#endif
+
 
 #define HOOK_DEFINE_INLINE(name)                        \
 struct name : public ::exl::hook::impl::InlineHook<name>
@@ -27,5 +31,15 @@ namespace exl::hook::impl {
             hook::HookInline(ptr, Derived::Callback);
         }
 
+#ifdef EXL_LOAD_KIND_MODULE
+        static ALWAYS_INLINE void InstallAtSymbol(const char* symbol) {
+            _HOOK_STATIC_CALLBACK_ASSERT();
+
+            uintptr_t address = 0;
+            EXL_ASSERT(R_SUCCEEDED(nn::ro::LookupSymbol(&address, symbol)), "Symbol not found!");
+
+            hook::HookInline(address, Derived::Callback);
+        }
+#endif
     };
 }

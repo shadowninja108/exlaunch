@@ -4,6 +4,10 @@
 #include "util/func_ptrs.hpp"
 #include "util/type_traits.hpp"
 
+#ifdef EXL_LOAD_KIND_MODULE
+#include "ro.h"
+#endif
+
 #define HOOK_DEFINE_REPLACE(name)                        \
 struct name : public ::exl::hook::impl::ReplaceHook<name>
 
@@ -36,5 +40,16 @@ namespace exl::hook::impl {
             
             hook::Hook(ptr, Derived::Callback);
         }
+
+#ifdef EXL_LOAD_KIND_MODULE
+        static ALWAYS_INLINE void InstallAtSymbol(const char* symbol) {
+            _HOOK_STATIC_CALLBACK_ASSERT();
+
+            uintptr_t address = 0;
+            EXL_ASSERT(R_SUCCEEDED(nn::ro::LookupSymbol(&address, symbol)), "Symbol not found!");
+
+            hook::Hook(address, Derived::Callback);
+        }
+#endif
     };
 }
