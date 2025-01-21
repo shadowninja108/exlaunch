@@ -3,9 +3,6 @@
 #include <common.hpp>
 
 #include "base.hpp"
-#ifdef EXL_LOAD_KIND_MODULE
-#include "ro.h"
-#endif
 
 
 #define HOOK_DEFINE_INLINE(name)                        \
@@ -31,15 +28,13 @@ namespace exl::hook::impl {
             hook::HookInline(ptr, Derived::Callback);
         }
 
-#ifdef EXL_LOAD_KIND_MODULE
         static ALWAYS_INLINE void InstallAtSymbol(const char* symbol) {
             _HOOK_STATIC_CALLBACK_ASSERT();
 
-            uintptr_t address = 0;
-            EXL_ASSERT(R_SUCCEEDED(nn::ro::LookupSymbol(&address, symbol)), "Symbol not found!");
+            const exl::reloc::LookupEntryBin* entry = exl::reloc::GetLookupTable().FindByName(symbol);
+            EXL_ASSERT(entry, "Symbol not found!");
 
-            hook::HookInline(address, Derived::Callback);
+            hook::HookInline(util::modules::GetTargetOffset(entry->m_Offset), Derived::Callback);
         }
-#endif
     };
 }

@@ -2,11 +2,8 @@
 
 #include "base.hpp"
 #include "util/func_ptrs.hpp"
+#include "reloc/reloc.hpp"
 #include <functional>
-
-#ifdef EXL_LOAD_KIND_MODULE
-#include "ro.h"
-#endif
 
 #define HOOK_DEFINE_TRAMPOLINE(name)                        \
 struct name : public ::exl::hook::impl::TrampolineHook<name>
@@ -51,16 +48,14 @@ namespace exl::hook::impl {
             OrigRef() = hook::Hook(ptr, Derived::Callback, true);
         }
 
-#ifdef EXL_LOAD_KIND_MODULE
         static ALWAYS_INLINE void InstallAtSymbol(const char* symbol) {
             _HOOK_STATIC_CALLBACK_ASSERT();
 
-            uintptr_t address = 0;
-            EXL_ASSERT(R_SUCCEEDED(nn::ro::LookupSymbol(&address, symbol)), "Symbol not found!");
+            const exl::reloc::LookupEntryBin* entry = exl::reloc::GetLookupTable().FindByName(symbol);
+            EXL_ASSERT(entry, "Symbol not found!");
 
-            OrigRef() = hook::Hook(address, Derived::Callback, true);
+            OrigRef() = hook::Hook(util::modules::GetTargetOffset(entry->m_Offset), Derived::Callback, true);
         }
-#endif
     };
 
 }
