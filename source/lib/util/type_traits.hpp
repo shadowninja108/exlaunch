@@ -2,9 +2,7 @@
 
 namespace exl::util {
     template<typename T>
-    struct FuncPtrTraits {
-        static_assert(false, "Unsupported type.");
-    };
+    struct FuncPtrTraits;
 
     /* Regular C function pointer. */
     template<typename R, typename... Args>
