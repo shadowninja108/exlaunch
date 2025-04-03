@@ -3,6 +3,8 @@
 #include "types.h"
 
 #include "util/util_typed_storage.hpp"
+#include "svc.hpp"
+#include "time.hpp"
 
 typedef u32 Handle;
 typedef u32 Result;

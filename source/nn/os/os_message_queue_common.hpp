@@ -14,14 +14,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-
-#include "nn_common.hpp"
+#include <nn/nn_common.hpp>
 
 namespace nn::os {
 
-    enum EventClearMode {
-        EventClearMode_ManualClear = 0,
-        EventClearMode_AutoClear   = 1,
+    enum class MessageQueueWaitType {
+        ForNotFull  = 1,
+        ForNotEmpty = 2,
     };
 
 }

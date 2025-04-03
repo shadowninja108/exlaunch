@@ -15,13 +15,5 @@
  */
 #pragma once
 
-#include "nn_common.hpp"
-
-namespace nn::os {
-
-    enum EventClearMode {
-        EventClearMode_ManualClear = 0,
-        EventClearMode_AutoClear   = 1,
-    };
-
-}
+#include "os_native_handle_types.hpp"
+#include "os_native_handle_api.hpp"
