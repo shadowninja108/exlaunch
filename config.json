@@ -4,12 +4,15 @@
 	"title_id_range_min": "0x0100000000010000",
 	"title_id_range_max": "0x01ffffffffffffff",
 	"main_thread_stack_size": "0x00100000",
+	"system_resource_size":	"0x00000000",
 	"main_thread_priority": 44,
 	"default_cpu_id": 0,
 	"process_category": 0,
 	"is_retail": true,
 	"pool_partition": 0,
 	"is_64_bit": true,
+	"disable_device_address_space_merge": false,
+	"optimize_memory_allocation": true,
 	"address_space_type": 3,
 	"filesystem_access": {
 		"permissions": "0xffffffffffffffff"
@@ -220,7 +223,7 @@
 		{
 			"type": "debug_flags",
 			"value": {
-				"allow_debug": false,
+				"allow_debug": true,
 				"force_debug": false,
 				"force_debug_prod": false
 			}
