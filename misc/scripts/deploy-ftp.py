@@ -3,7 +3,7 @@
 import ftplib
 import os
 from types import NoneType
-from typing import Any, Dict, Optional, Self, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 # https://ftputil.sschwarzer.net
 import ftputil
@@ -38,7 +38,7 @@ FTP_PASSWORD: str = getenv('FTP_PASSWORD', '')
 class SessionFactory(ftplib.FTP):
     '''Session factory for FTPHost.'''
     
-    def __init__(self: Self, ftp_ip: str, ftp_port: int, ftp_username: str, ftp_password: str, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> NoneType:
+    def __init__(self, ftp_ip: str, ftp_port: int, ftp_username: str, ftp_password: str, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> NoneType:
         super().__init__()
         
         # Connect to FTP server.

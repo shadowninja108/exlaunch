@@ -219,8 +219,26 @@ namespace exl::diag {
     void OnAssertionFailure(AssertionType type, const char *expr, const char *func, const char *file, int line) {
         return OnAssertionFailure(type, expr, func, file, line, "");
     }
-    
     extern "C" void exl_abort(Result result) {
         R_ABORT_UNLESS(result);
+    }
+}
+
+namespace exl::impl {
+    NORETURN NOINLINE void UnexpectedDefaultImpl(const char *func, const char *file, int line) {
+        /* Create abort info. */
+        std::va_list vl{};
+        const ::exl::diag::LogMessage message = { "" , std::addressof(vl) };
+        const ::exl::diag::AbortInfo abort_info = {
+            ::exl::diag::AbortReason_UnexpectedDefault,
+            std::addressof(message),
+            "",
+            func,
+            file,
+            line,
+        };
+
+        /* Abort. */
+        diag::AbortWithCtx({ 0, abort_info });
     }
 }

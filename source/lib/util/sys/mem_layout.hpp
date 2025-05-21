@@ -132,6 +132,7 @@ namespace exl::util {
     }
     #elif defined EXL_AS_RTLD
         constexpr auto s_SelfModuleIdx = ModuleIndex::Rtld;
+    }
     #endif
 
 

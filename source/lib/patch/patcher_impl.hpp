@@ -8,7 +8,7 @@
 namespace exl::patch {
 
     namespace impl {
-        inline util::TypedStorage<const util::RwPages> s_Storage;
+        inline util::TypedStorage<util::RwPages> s_Storage;
 
         [[gnu::const]] inline const util::RwPages& GetRwPages() { return util::GetReference(s_Storage); }
 

@@ -14,7 +14,7 @@
 #define _HOOK_STATIC_CALLBACK_ASSERT() \
     static_assert(!std::is_member_function_pointer_v<CallbackFuncPtr<>>, "Callback method must be static!")
 
-namespace exl::hook {  
+namespace exl::hook {
 
     /* TODO: 32-bit. */
     namespace arch = nx64;
