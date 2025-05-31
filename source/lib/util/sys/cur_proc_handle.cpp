@@ -62,7 +62,7 @@ namespace exl::util::proc_handle {
         Result GetViaMesosphere() {
             u64 handle;
             R_TRY(svcGetInfo(&handle, InfoType_MesosphereCurrentProcess, INVALID_HANDLE, 0));
-            s_Handle = handle;
+            s_Handle = static_cast<Handle>(handle);
             
             return result::Success;
         }

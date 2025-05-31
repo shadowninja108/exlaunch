@@ -6,7 +6,7 @@ namespace exl::armv8::inst {
 
     struct BranchLink : public impl::op101x::UnconditionalBranchImmediate {
 
-        constexpr BranchLink(uint relative_address) : UnconditionalBranchImmediate(UnconditionalBranchImmediate::BL, relative_address) {}
+        constexpr BranchLink(int relative_address) : UnconditionalBranchImmediate(UnconditionalBranchImmediate::BL, relative_address) {}
     };
 
     static_assert(BranchLink(0x4440).Value() == 0x94001110, "");

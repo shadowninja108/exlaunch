@@ -6,6 +6,7 @@
 #include <lib/util/module_index.hpp>
 #include <lib/util/sys/mem_layout.hpp>
 #include <lib/util/strings.hpp>
+#include <lib/util/sys/modules.hpp>
 #include <lib/reloc/reloc.hpp>
 #include <lib/log/logger_mgr.hpp>
 #include <program/loggers.hpp>
@@ -66,10 +67,25 @@ namespace exl::reloc {
     struct RelAccessor<Elf_Rela> : RelAccessor<const Elf_Rela> {};
 
     namespace {
-        template<typename T>
-        requires IsElfRel<T>
-        void ApplyRel(const LookupEntryBin& entry, RelAccessor<T> accessor, std::string_view symbolName) {
-            auto type = accessor.GetType();
+
+        void ApplyRel(const LookupEntryBin& entry, std::string_view symbolName, std::uint32_t type, uintptr_t* target, ptrdiff_t addend) {
+            auto referredModule = util::GetModuleInfo(entry.m_ModuleIndex);
+            if(Logging.IsEnabled()) {
+                char nameBuffer[util::ModuleInfo::s_ModulePathLengthMax+1];
+                util::CopyString(nameBuffer, referredModule.GetModuleName());
+                Logging.Log(EXL_LOG_PREFIX "Symbol %s being relocated to [%s]+%x", symbolName.data(), nameBuffer, entry.m_Offset);
+            }
+
+            /* Target address will be (referred module start + offset) + rel addend. */
+            *target = static_cast<uintptr_t>(referredModule.m_Total.m_Start + entry.m_Offset + addend);
+        }
+
+        void CheckAndApplyRel(const Lookup& table, SymAccessor symbol, std::uint32_t type, uintptr_t* target, ptrdiff_t addend) {
+            auto symbolName = symbol.GetName();
+            auto search = table.FindByName(symbolName);
+            if(search == nullptr)
+                return;
+                
             if(
                 /* If it's not a jump slot, rel absolute, or a global data, we will not apply it. */
                 type != ARCH_JUMP_SLOT &&
@@ -79,34 +95,28 @@ namespace exl::reloc {
                 return;
             }
 
-            if(!util::HasModule(entry.m_ModuleIndex)) {
-                Logging.Log(EXL_LOG_PREFIX "Symbol %s has invalid module index %d", symbolName.data(), static_cast<int>(entry.m_ModuleIndex));
+
+            if(!util::HasModule(search->m_ModuleIndex)) {
+                Logging.Log(EXL_LOG_PREFIX "Symbol %s has invalid module index %d", symbolName.data(), static_cast<int>(search->m_ModuleIndex));
                 return;
             }
 
-            auto target = accessor.GetTarget();
-            auto referredModule = util::GetModuleInfo(entry.m_ModuleIndex);
-            if(Logging.IsEnabled()) {
-                char nameBuffer[util::ModuleInfo::s_ModulePathLengthMax+1];
-                util::CopyString(nameBuffer, referredModule.GetModuleName());
-                Logging.Log(EXL_LOG_PREFIX "Symbol %s being relocated to [%s]+%x", symbolName.data(), nameBuffer, entry.m_Offset);
-            }
-
-            /* Target address will be (referred module start + offset) + rel addend. */
-            *target = static_cast<uintptr_t>(referredModule.m_Total.m_Start + entry.m_Offset + accessor.GetAddend());
+            ApplyRel(*search, symbolName, type, target, addend);
         }
 
         template<typename T>
         requires IsElfRel<T>
-        void ApplyRels(const Lookup& table, const rtld::ModuleObject& mod, const T* ptr, size_t count, size_t size) {
-            std::span<const T> span { ptr, std::max(count, size / sizeof(T)) };
+        void ApplyRels(const Lookup& table, const rtld::ModuleObject& mod, const T* ptr, size_t size) {
+            std::span<const T> span { ptr, size / sizeof(T) };
             for(auto rel : span) {
                 auto accessor = RelAccessor<T> { rel, mod };
-                auto sym = accessor.GetSym();
-                auto search = table.FindByName(sym.GetName());
-                if(search != nullptr) {
-                    ApplyRel(*search, accessor, sym.GetName());
-                }
+                CheckAndApplyRel(
+                    table,
+                    accessor.GetSym(),
+                    accessor.GetType(),
+                    accessor.GetTarget(),
+                    accessor.GetAddend()
+                );
             }
         }
 
@@ -115,13 +125,19 @@ namespace exl::reloc {
             bool hasRela = (mod.rela_count != 0) || (mod.rela_dyn_size != 0);
 
             EXL_ASSERT(hasRel != hasRela);
-            /* Seems dkp's linker omits this tag, so RTLD ends up misunderstanding. Fortunately, this seems to work out (?). */
-            // EXL_ASSERT(hasRela == mod.is_rela);
             
             if(hasRela) {
-                ApplyRels<Elf_Rela>(table, mod, mod.rela_or_rel.rela, mod.rela_count, mod.rela_dyn_size);
+                ApplyRels<Elf_Rela>(table, mod, mod.rela_or_rel.rela, mod.rela_dyn_size);
             } else {
-                ApplyRels<Elf_Rel>(table, mod, mod.rela_or_rel.rel, mod.rel_count, mod.rel_dyn_size);
+                ApplyRels<Elf_Rel>(table, mod, mod.rela_or_rel.rel, mod.rel_dyn_size);
+            }
+        }
+
+        void ApplyPlt(const Lookup& table, const rtld::ModuleObject& mod) {
+            if(mod.is_rela) {
+                ApplyRels<Elf_Rela>(table, mod, mod.rela_or_rel_plt.rela, mod.rela_or_rel_plt_size);
+            } else {
+                ApplyRels<Elf_Rel>(table, mod, mod.rela_or_rel_plt.rel, mod.rela_or_rel_plt_size);
             }
         }
     }
@@ -135,5 +151,6 @@ namespace exl::reloc {
             const_cast<Elf_Dyn*>(info.m_Mod->GetDynamic())
         );
         ApplyRels(*this, modObj);
+        ApplyPlt(*this, modObj);
     }
 }

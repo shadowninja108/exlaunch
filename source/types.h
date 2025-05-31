@@ -46,6 +46,7 @@ typedef double f64;
 #define UNREACHABLE __builtin_unreachable()
 #define PAGE_SIZE (0x1000)
 #define ALWAYS_INLINE inline __attribute__((always_inline))
+#define ALWAYS_INLINE_LAMBDA __attribute__((always_inline))
 #define BITSIZEOF(x) (sizeof(x) * CHAR_BIT)
 #define STRINGIFY(a) STRINGIFY_(a)
 #define STRINGIFY_(a) #a
