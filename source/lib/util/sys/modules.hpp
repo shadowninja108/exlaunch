@@ -2,7 +2,6 @@
 
 #include "module_info.hpp"
 #include "mem_layout.hpp"
-#include "module_iterator.hpp"
 
 namespace exl::util {
     namespace mem_layout {
