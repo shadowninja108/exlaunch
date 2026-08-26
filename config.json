@@ -13,6 +13,7 @@
 	"is_64_bit": true,
 	"disable_device_address_space_merge": false,
 	"optimize_memory_allocation": false,
+	"enable_alias_region_extra_size": false,
 	"address_space_type": 3,
 	"filesystem_access": {
 		"permissions": "0xffffffffffffffff"
