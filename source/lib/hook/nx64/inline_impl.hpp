@@ -96,7 +96,7 @@ namespace exl::hook::nx64 {
         };
     };
 
-    struct InlineFloatCtx : public InlineCtx {
+    struct InlineFloatCtx {
         /* Ensure the data is aligned for efficient access. */
         union ALIGNED(sizeof(FloatRegister)) {
             /* Accessors to simplify access to registers. */
@@ -106,6 +106,12 @@ namespace exl::hook::nx64 {
             impl::Float64RegisterAccessor D;
             impl::Float32RegisterAccessor S;
             FloatRegisters m_Fr;
+        };
+        union {
+            /* Accessors are union'd with the gprs so that they can be accessed directly. */
+            impl::Gp64RegisterAccessor X;
+            impl::Gp32RegisterAccessor W;
+            GpRegisters m_Gpr;
         };
 
         /* 

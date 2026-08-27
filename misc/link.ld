@@ -32,7 +32,11 @@ SECTIONS
   . = ALIGN(0x1000);
 
   /* App name */
-  .module_name : { KEEP (*(.nx-module-name)) } :rodata
+  .module_name : { 
+    HIDDEN(__module_name_start__ = .);
+    KEEP (*(.nx-module-name))
+    HIDDEN(__module_name_end__ = .);
+  } :rodata
 
   /* Make sure everything is aligned */
   . = ALIGN(8);
@@ -74,7 +78,11 @@ SECTIONS
   .eh_frame : { KEEP (*(.eh_frame)) } :rodata
 
   /* Misc .rodata stuffs (build-id, etc.) */
-  .note.gnu.build-id : { *(.note.gnu.build-id) } :rodata
+  .note.gnu.build-id : {
+    HIDDEN(__note_gnu_build_id_start__ = .);
+    *(.note.gnu.build-id)
+    HIDDEN(__note_gnu_build_id_end__ = .);
+  } :rodata
 
   /* Read-write sections */
   . = ALIGN(0x1000);
@@ -83,6 +91,8 @@ SECTIONS
   .data : {
     *(.data .data.*)
   } :data
+  
+  HIDDEN(__relro_start__ = .);
 
   /* This section should be made read only after relocation but in practice we will not do that */
   .data.rela.ro : {
@@ -95,6 +105,8 @@ SECTIONS
     *(.data.rel.ro.local*)
     *(.data.rel.ro .data.rel.ro.*)
   } :data
+
+  HIDDEN(__full_relro_end__ = .);
 
   /* All GOT sections */
   __got_start__ = .;

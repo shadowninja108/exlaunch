@@ -17,16 +17,28 @@ namespace exl::util {
         const Mod0* m_Mod;
 
         std::string_view GetModulePath() const {
-            struct {
-                std::uint32_t m_Unk;
-                std::uint32_t m_Length;
-                char m_Data[s_ModulePathLengthMax];
-            }* module;
-            auto ptr = reinterpret_cast<decltype(module)>(m_Rodata.m_Start);
-            if(ptr->m_Length == 0)
-                return "";
-
-            return { ptr->m_Data, ptr->m_Length };
+            const auto version = *reinterpret_cast<std::uint32_t*>(m_Rodata.m_Start);
+            if(version == 0) {
+                struct {
+                    std::uint32_t m_Version;
+                    std::uint32_t m_Length;
+                    char m_Data[s_ModulePathLengthMax];
+                }* module;
+                auto ptr = reinterpret_cast<decltype(module)>(m_Rodata.m_Start);
+                return { ptr->m_Data, ptr->m_Length };
+            } else if(version == 1) {
+                struct {
+                    std::uint32_t m_Version;
+                    std::uint32_t m_Mod0Offset;
+                    std::uint32_t m_UnkOffset; // ptr passed to nn::ro::ProtectRelro but is unused
+                    std::uint32_t m_Unk; // 0
+                    std::uint32_t m_Length;
+                    char m_Data[s_ModulePathLengthMax];
+                }* module;
+                auto ptr = reinterpret_cast<decltype(module)>(m_Rodata.m_Start);
+                return { ptr->m_Data, ptr->m_Length };
+            }
+            return "";
         }
 
         std::string_view GetModuleName() const {
