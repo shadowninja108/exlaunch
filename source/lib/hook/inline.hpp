@@ -4,6 +4,7 @@
 
 #include "base.hpp"
 
+
 #define HOOK_DEFINE_INLINE(name)                        \
 struct name : public ::exl::hook::impl::InlineHook<name>
 
@@ -27,5 +28,13 @@ namespace exl::hook::impl {
             hook::HookInline(ptr, Derived::Callback);
         }
 
+        static ALWAYS_INLINE void InstallAtSymbol(const char* symbol) {
+            _HOOK_STATIC_CALLBACK_ASSERT();
+
+            const exl::reloc::LookupEntryBin* entry = exl::reloc::GetLookupTable().FindByName(symbol);
+            EXL_ASSERT(entry, "Symbol not found!");
+
+            hook::HookInline(util::modules::GetTargetOffset(entry->m_Offset), Derived::Callback);
+        }
     };
 }
